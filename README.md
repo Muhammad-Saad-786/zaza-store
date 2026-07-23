@@ -1,16 +1,237 @@
-# React + Vite
+<div align="center">
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# ⚡ ZAZA STORE
 
-Currently, two official plugins are available:
+### The Premium Marketplace for Mobile Legends Accounts
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+<p>
+Buy • Sell • Trade • Securely
+</p>
 
-## React Compiler
+<p>
+<img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react"/>
+<img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite"/>
+<img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase"/>
+<img src="https://img.shields.io/badge/Tailwind-38B2AC?style=for-the-badge&logo=tailwindcss"/>
+<img src="https://img.shields.io/badge/License-MIT-success?style=for-the-badge"/>
+</p>
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+<img src="./assets/banner.gif" width="100%"/>
 
-## Expanding the ESLint configuration
+### 🚀 Buy & Sell Mobile Legends Accounts with Confidence
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+[🌐 Live Demo](https://your-demo-link.com) •
+[📖 Documentation](https://your-docs.com) •
+[🐛 Report Bug](https://github.com/yourrepo/issues) •
+[⭐ Star this Repository](https://github.com/yourrepo)
+
+</div>
+
+---
+
+# ✨ About
+
+ZAZA Store is a **modern SaaS marketplace** designed for buying and selling **Mobile Legends: Bang Bang accounts** safely and efficiently.
+
+Built with a premium dark UI, smooth animations, and Supabase backend, ZAZA Store provides a seamless experience for buyers, sellers, and administrators.
+
+---
+
+# 📸 Preview
+
+| Home | Marketplace |
+|------|-------------|
+| ![](./assets/home.png) | ![](./assets/marketplace.png) |
+
+| Seller Dashboard | Admin Panel |
+|-----------------|-------------|
+| ![](./assets/dashboard.png) | ![](./assets/admin.png) |
+
+---
+
+# 🔥 Features
+
+- 🎮 Buy MLBB Accounts
+- 💰 Sell Accounts
+- 🔍 Powerful Search & Filters
+- ⭐ Reviews & Ratings
+- ❤️ Wishlist
+- 💬 Real-time Chat
+- 🔐 Secure Authentication
+- ☁️ Cloud Storage
+- 📱 Fully Responsive
+- ✨ Glassmorphism UI
+- ⚡ GSAP + Framer Motion Animations
+- 👑 Admin Dashboard
+- 🔔 Real-time Notifications
+- 📈 Seller Analytics
+- 🤖 AI-powered Features (Upcoming)
+
+---
+
+# 🛒 Buying an Account
+
+```text
+Browse Marketplace
+      ↓
+Filter by Rank / Skins / Price
+      ↓
+Open Listing
+      ↓
+View Complete Details
+      ↓
+Purchase Securely
+      ↓
+Receive Account
+      ↓
+Leave Review ⭐
+```
+
+---
+
+# 💰 Selling an Account
+
+```text
+Create Seller Account
+        ↓
+Upload Account Details
+        ↓
+Verification
+        ↓
+Listing Published
+        ↓
+Buyer Purchases
+        ↓
+Payment Received
+```
+
+---
+
+# 🏗 Tech Stack
+
+| Frontend | Backend |
+|-----------|----------|
+| React | Supabase |
+| Vite | PostgreSQL |
+| Tailwind CSS | Authentication |
+| Framer Motion | Storage |
+| GSAP | Realtime |
+| React Router | Row Level Security |
+| React Hook Form | Edge Functions |
+| Zod | Database |
+
+---
+
+# 📂 Project Structure
+
+```
+src
+ ├── components
+ ├── pages
+ ├── layouts
+ ├── hooks
+ ├── lib
+ ├── services
+ ├── stores
+ ├── context
+ ├── assets
+ └── utils
+```
+
+---
+
+# 🚀 Installation
+
+```bash
+git clone https://github.com/yourusername/zaza-store.git
+
+cd zaza-store
+
+npm install
+
+npm run dev
+```
+
+---
+
+# 🔑 Environment Variables
+
+```env
+VITE_SUPABASE_URL=
+
+VITE_SUPABASE_ANON_KEY=
+
+VITE_OPENAI_API_KEY=
+```
+
+---
+
+# 🔒 Security
+
+- ✅ Supabase Authentication
+- ✅ Row Level Security
+- ✅ Protected Routes
+- ✅ Secure Database Policies
+- ✅ Image Storage
+- ✅ Account Verification
+
+---
+
+# 🤖 Future AI Features
+
+- AI Listing Generator
+- AI Price Recommendation
+- AI Scam Detection
+- AI Search Assistant
+- AI Chat Support
+- AI Fraud Prevention
+
+---
+
+# 🗺 Roadmap
+
+- ✅ Authentication
+- ✅ Marketplace
+- ✅ Seller Dashboard
+- ✅ Admin Dashboard
+- ✅ Wishlist
+- ✅ Reviews
+- 🔄 Real-time Chat
+- 🔄 Notifications
+- 🔄 Payment Gateway
+- 🔄 AI Assistant
+- 🔄 Mobile App
+
+---
+
+# ❤️ Contributing
+
+Contributions are always welcome.
+
+```bash
+Fork Repository
+
+Create Branch
+
+Commit Changes
+
+Open Pull Request
+```
+
+---
+
+# ⭐ Support
+
+If you like this project, don't forget to give it a ⭐
+
+---
+
+<div align="center">
+
+## Built with ❤️ by Muhammad Saad
+
+<img src="./assets/footer-banner.gif" width="100%">
+
+### ⚡ ZAZA STORE — Buy. Sell. Dominate.
+
+</div>
