@@ -16,7 +16,7 @@ Buy • Sell • Trade • Securely
 <img src="https://img.shields.io/badge/License-MIT-success?style=for-the-badge"/>
 </p>
 
-<img src="./assets/banner.gif" width="100%"/>
+<img src="public/hero-zaza.jpg" width="100%"/>
 
 ### 🚀 Buy & Sell Mobile Legends Accounts with Confidence
 
@@ -41,11 +41,11 @@ Built with a premium dark UI, smooth animations, and Supabase backend, ZAZA Stor
 
 | Home | Marketplace |
 |------|-------------|
-| ![](./assets/home.png) | ![](./assets/marketplace.png) |
+| ![](public/hero-zaza.jpg) | ![](public/marketplace.jpg) |
 
 | Seller Dashboard | Admin Panel |
 |-----------------|-------------|
-| ![](./assets/dashboard.png) | ![](./assets/admin.png) |
+| ![](public/dashboard.jpg) | ![](public/zaza-admin.jpg) |
 
 ---
 
@@ -228,9 +228,9 @@ If you like this project, don't forget to give it a ⭐
 
 <div align="center">
 
-## Built with ❤️ by Muhammad Saad
+## Built by Saad Asim
 
-<img src="./assets/footer-banner.gif" width="100%">
+<img src="public/hero-zaza.jpg" width="100%">
 
 ### ⚡ ZAZA STORE — Buy. Sell. Dominate.
 
