@@ -1,0 +1,5 @@
+User-agent: *
+
+Allow: /
+
+Sitemap: https://zaza-store-three.vercel.app/sitemap.xml
