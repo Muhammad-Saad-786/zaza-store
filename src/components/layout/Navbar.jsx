@@ -356,7 +356,7 @@ export default function Navbar() {
                         {profile?.avatar_url ? (
                           <img
                             src={profile.avatar_url}
-                            alt=""
+                            alt="User Avatar"
                             className="w-full h-full object-cover"
                             referrerPolicy="no-referrer"
                             onError={(e) => {

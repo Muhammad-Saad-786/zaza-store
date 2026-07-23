@@ -38,6 +38,7 @@ import Users from "./pages/admin/Users";
 import AdminAccounts from "./pages/admin/Accounts";
 import AdminOrders from "./pages/admin/Orders";
 import Verifications from "./pages/admin/Verifications";
+import Reports from "./pages/admin/Reports";
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -168,7 +169,7 @@ function App() {
             <Route path="accounts" element={<AdminAccounts />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="verifications" element={<Verifications />} />
-            <Route path="reports" element={<AdminOverview />} />
+            <Route path="reports" element={<Reports />} />
           </Route>
 
           {/* 404 */}

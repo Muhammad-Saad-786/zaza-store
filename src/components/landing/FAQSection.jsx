@@ -4,44 +4,44 @@ import { FiPlus, FiMinus } from "react-icons/fi";
 
 const faqs = [
   {
-    question: "How does buying an account work?",
+    question: "How does buying an MLBB account work?",
     answer:
-      'Browse our marketplace, find the account you love, and click "Buy Now". Payment is held in escrow until you receive and verify the account details. Our secure system ensures a safe transaction for both buyers and sellers.',
+      "Browse our marketplace, find an account you love, and click 'Buy Now'. Your payment is held securely in escrow until you receive and verify the account details. Once confirmed, the seller gets paid.",
   },
   {
-    question: "Is it safe to buy MLBB accounts?",
+    question: "Is it safe to buy Mobile Legends accounts on ZAZA Store?",
     answer:
-      "Yes! ZAZA Store uses secure escrow payments, verifies all sellers, and provides buyer protection. We hold the payment until you confirm the account is as described. All transactions are encrypted and secure.",
+      "Absolutely! We use secure escrow payments, verify all sellers, and provide buyer protection. Your money is only released to the seller after you confirm the account is exactly as described.",
   },
   {
-    question: "How do I sell my account?",
+    question: "What makes a 'Collector' or 'Legend' skin special?",
     answer:
-      'Click "Sell Account", fill out the multi-step form with your account details, upload screenshots, and set your price. Our team reviews the listing and publishes it once approved. You get paid once the buyer confirms the account.',
+      "Collector skins are limited-edition premium skins with exclusive effects and animations. Legend skins are the highest tier, featuring complete visual overhauls, unique voice lines, and special recall effects.",
+  },
+  {
+    question: "How do I sell my MLBB account?",
+    answer:
+      "Click 'Sell Account', fill in your account details including rank, heroes, skins, and upload screenshots. Set your price and publish. Once a buyer purchases, you'll deliver the account and receive payment.",
   },
   {
     question: "What payment methods are accepted?",
     answer:
-      "We accept credit/debit cards, PayPal, GCash, PayMaya, bank transfers, and various cryptocurrency payments. All payments are processed securely through our payment partners.",
+      "We accept credit/debit cards, PayPal, GCash, PayMaya, bank transfers, and cryptocurrency payments. All transactions are processed securely through our trusted payment partners.",
   },
   {
-    question: "How long does it take to receive the account?",
+    question: "How quickly do I get the account after purchase?",
     answer:
-      "Most accounts are delivered instantly after payment confirmation. The seller will provide all login details, and our system facilitates a smooth handover. In rare cases, it may take up to 24 hours.",
+      "Most accounts are delivered instantly after payment confirmation. The seller provides all login details through our secure system. In rare cases, delivery may take up to 24 hours.",
   },
   {
-    question: "What if the account is not as described?",
+    question: "What if the account doesn't match the description?",
     answer:
-      "ZAZA Store offers buyer protection. If the account doesn't match the listing description, you can open a dispute within 48 hours. Our support team will investigate and ensure you get a refund if necessary.",
+      "ZAZA Store offers full buyer protection. If the account doesn't match the listing, open a dispute within 48 hours. Our support team will investigate and ensure you receive a full refund if necessary.",
   },
   {
-    question: "Can I get a refund after purchase?",
+    question: "Can I resell an account I bought from ZAZA Store?",
     answer:
-      "Refunds are available within 48 hours if the account doesn't match the description or if there are access issues. Our escrow system protects your payment until you confirm satisfaction.",
-  },
-  {
-    question: "How does seller verification work?",
-    answer:
-      "Sellers submit identification documents and proof of previous sales. Our team manually reviews each application. Verified sellers get a badge that builds trust with buyers and typically sell accounts faster.",
+      "Yes! Once you own the account, you're free to resell it on our platform. Simply create a new listing with the updated account details and screenshots.",
   },
 ];
 
@@ -49,24 +49,25 @@ export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState(null);
 
   return (
-    <section className="relative py-20">
+    <section className="relative py-20 bg-black">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-white">
-            Frequently Asked <span className="text-gradient">Questions</span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
+            Frequently Asked{" "}
+            <span className="text-transparent bg-clip-text bg-purple-600">
+              Questions
+            </span>
           </h2>
-          <p className="mt-2 text-white/40">
+          <p className="text-white/40 mt-3">
             Everything you need to know about ZAZA Store
           </p>
         </motion.div>
 
-        {/* FAQ List */}
         <div className="space-y-3">
           {faqs.map((faq, index) => (
             <motion.div
@@ -76,31 +77,32 @@ export default function FAQSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
             >
-              <motion.button
+              <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className={`w-full text-left glass-card p-5 transition-all duration-300 ${
+                className={`w-full text-left p-5 rounded-xl border transition-all duration-300 ${
                   openIndex === index
-                    ? "border-brand-purple/50 bg-brand-purple/5"
-                    : "hover:border-white/20"
+                    ? "border-purple-500/30 bg-purple-500/5"
+                    : "border-white/5 bg-white/[0.02] hover:border-white/10"
                 }`}
               >
                 <div className="flex items-center justify-between gap-4">
-                  <h3 className="font-semibold text-white pr-8">
+                  <h3 className="font-semibold text-white text-sm sm:text-base pr-8">
                     {faq.question}
                   </h3>
-                  <motion.div
-                    animate={{ rotate: openIndex === index ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex-shrink-0 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center"
+                  <div
+                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                      openIndex === index
+                        ? "bg-purple-500/20 text-purple-400"
+                        : "bg-white/5 text-white/40"
+                    }`}
                   >
                     {openIndex === index ? (
-                      <FiMinus className="w-4 h-4 text-brand-purple" />
+                      <FiMinus className="w-4 h-4" />
                     ) : (
-                      <FiPlus className="w-4 h-4 text-white/50" />
+                      <FiPlus className="w-4 h-4" />
                     )}
-                  </motion.div>
+                  </div>
                 </div>
-
                 <AnimatePresence>
                   {openIndex === index && (
                     <motion.div
@@ -116,7 +118,7 @@ export default function FAQSection() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </motion.button>
+              </button>
             </motion.div>
           ))}
         </div>

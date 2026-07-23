@@ -22,7 +22,15 @@ const useOrderStore = create((set, get) => ({
       toast.error("This account is no longer available");
       return;
     }
-    set({ showConfirmModal: true, selectedAccount: account });
+
+    set({
+      showConfirmModal: true,
+      selectedAccount: {
+        ...account,
+        // Ensure images array exists
+        images: account.images || [],
+      },
+    });
   },
 
   closeBuyConfirm: () => {

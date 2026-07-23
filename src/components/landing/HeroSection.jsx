@@ -1,342 +1,227 @@
-import { useRef, useEffect, useState } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { ScrollTrigger } from "gsap/all";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, useScroll, useTransform } from "framer-motion";
-import {
-  HiOutlineSearch,
-  HiOutlineShieldCheck,
-  HiOutlineLightningBolt,
-  HiOutlineStar,
-} from "react-icons/hi";
-import Button from "../ui/Button";
-import FloatingElements from "./FloatingElements";
-import AnimatedBackground from "../ui/AnimatedBackground";
+import { HiOutlineSearch, HiOutlineLightningBolt } from "react-icons/hi";
+import VideoPreview from "./VideoPreview";
 
-export default function HeroSection() {
-  const heroRef = useRef(null);
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 500], [0, 150]);
-  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
+gsap.registerPlugin(ScrollTrigger);
 
-  const [stats, setStats] = useState([
-    { value: 0, target: 12500, suffix: "+", label: "Accounts Sold" },
-    { value: 0, target: 8500, suffix: "+", label: "Happy Buyers" },
-    { value: 0, target: 3200, suffix: "+", label: "Verified Sellers" },
-    { value: 0, target: 99.9, suffix: "%", label: "Secure Rate" },
-  ]);
+const totalVideos = 4;
+const getVideoSrc = (index) => `/hero-${index}.mp4`;
 
-  // Animated counter
+const HeroSection = () => {
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [hasClicked, setHasClicked] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Refs
+  const frameRef = useRef(null);
+  const backgroundVideoRef = useRef(null);
+  const previewVideoRef = useRef(null);
+  const nextVideoRef = useRef(null);
+
+  // Force video reload when component mounts
   useEffect(() => {
-    const duration = 2000;
-    const steps = 60;
-    const interval = duration / steps;
+    setLoading(true);
 
-    stats.forEach((stat, index) => {
-      let current = 0;
-      const increment = stat.target / steps;
+    const video = backgroundVideoRef.current;
 
-      const timer = setInterval(() => {
-        current += increment;
-        if (current >= stat.target) {
-          current = stat.target;
-          clearInterval(timer);
-        }
-        setStats((prev) => {
-          const newStats = [...prev];
-          newStats[index] = { ...newStats[index], value: Math.floor(current) };
-          return newStats;
-        });
-      }, interval);
+    if (video) {
+      video.load();
+
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
+    }
+
+    // Safety fallback so loader never gets stuck
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Hide loader when background video is ready
+  const handleBackgroundLoaded = () => {
+    setLoading(false);
+  };
+
+  const handleMiniVdClick = () => {
+    setHasClicked(true);
+    setCurrentIndex((prev) => (prev % totalVideos) + 1);
+  };
+
+  // Main video transition animation
+  useGSAP(
+    () => {
+      if (!hasClicked) return;
+
+      gsap.set(nextVideoRef.current, { visibility: "visible" });
+
+      gsap.to(nextVideoRef.current, {
+        transformOrigin: "center center",
+        scale: 1,
+        width: "100%",
+        height: "100%",
+        duration: 1,
+        ease: "power1.inOut",
+        onStart: () => {
+          nextVideoRef.current?.load();
+          nextVideoRef.current?.play().catch(() => {});
+        },
+      });
+
+      gsap.from(previewVideoRef.current, {
+        transformOrigin: "center center",
+        scale: 0,
+        duration: 1.5,
+        ease: "power1.inOut",
+      });
+    },
+    { dependencies: [currentIndex, hasClicked], revertOnUpdate: true },
+  );
+
+  // Scroll animation
+  useGSAP(() => {
+    if (!frameRef.current) return;
+
+    gsap.set(frameRef.current, {
+      clipPath: "polygon(14% 0, 72% 0, 88% 90%, 0 95%)",
+      borderRadius: "0% 0% 40% 10%",
+    });
+
+    gsap.from(frameRef.current, {
+      clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+      borderRadius: "0% 0% 0% 0%",
+      ease: "power1.inOut",
+      scrollTrigger: {
+        trigger: frameRef.current,
+        start: "center center",
+        end: "bottom center",
+        scrub: true,
+      },
     });
   }, []);
 
+  // Cleanup ScrollTriggers when leaving page
+  useEffect(() => {
+    return () => {
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    };
+  }, []);
+
   return (
-    <section
-      ref={heroRef}
-      className="relative min-h-screen flex items-center overflow-hidden"
-    >
-      {/* Background */}
-      <AnimatedBackground />
-
-      {/* Gradient Orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ duration: 8, repeat: Infinity }}
-          className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(139, 92, 246, 0.15), transparent 70%)",
-          }}
-        />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{ duration: 10, repeat: Infinity }}
-          className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(245, 158, 11, 0.1), transparent 70%)",
-          }}
-        />
-      </div>
-
-      <motion.div style={{ y, opacity }} className="relative z-10 w-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left Content */}
-            <div>
-              {/* Main Heading */}
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-5xl sm:text-6xl lg:text-7xl font-display font-extrabold leading-[1.1]"
-              >
-                <span className="text-white">Buy & Sell</span>
-                <br />
-                <span className="text-gradient">MLBB Accounts</span>
-                <br />
-                <span className="text-white">Securely</span>
-              </motion.h1>
-
-              {/* Description */}
-              <motion.p
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="mt-6 text-lg text-white/50 max-w-lg leading-relaxed"
-              >
-                The ultimate marketplace for Mobile Legends accounts. Find your
-                dream account with rare skins, high ranks, and verified sellers.
-                Your next victory starts here.
-              </motion.p>
-
-              {/* CTA Buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="mt-8 flex flex-wrap gap-4"
-              >
-                <Link to="/marketplace">
-                  <Button variant="primary" size="lg" magnetic>
-                    <HiOutlineSearch className="w-5 h-5" />
-                    Browse Accounts
-                  </Button>
-                </Link>
-                <Link to="/sell">
-                  <Button variant="gold" size="lg" magnetic>
-                    <HiOutlineLightningBolt className="w-5 h-5" />
-                    Sell Account
-                  </Button>
-                </Link>
-              </motion.div>
-
-              {/* Trust Indicators */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="mt-8 flex flex-wrap gap-6"
-              >
-                {[
-                  { icon: HiOutlineShieldCheck, text: "Secure Escrow" },
-                  { icon: HiOutlineStar, text: "Verified Sellers" },
-                  { icon: HiOutlineLightningBolt, text: "Instant Delivery" },
-                ].map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 text-white/40"
-                  >
-                    <item.icon className="w-5 h-5 text-brand-purple" />
-                    <span className="text-sm">{item.text}</span>
-                  </div>
-                ))}
-              </motion.div>
-
-              {/* Search Bar */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="mt-10"
-              >
-                <div className="relative max-w-md">
-                  <div className="absolute inset-0 bg-gradient-to-r from-brand-purple/20 to-brand-gold/20 rounded-2xl blur-xl" />
-                  <div className="relative flex items-center glass-card p-2">
-                    <HiOutlineSearch className="w-5 h-5 text-white/30 ml-3" />
-                    <input
-                      type="text"
-                      placeholder="Search by hero, rank, or skin..."
-                      className="flex-1 bg-transparent border-none outline-none px-3 py-2 text-white placeholder-white/30 text-sm"
-                    />
-                    <Button variant="primary" size="sm">
-                      Search
-                    </Button>
-                  </div>
-                </div>
-                {/* Popular Searches */}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {[
-                    "Mythic Glory",
-                    "Collector Skins",
-                    "Legend",
-                    "KOF",
-                    "Sanrio",
-                  ].map((tag) => (
-                    <Link
-                      key={tag}
-                      to={`/marketplace?search=${tag.toLowerCase()}`}
-                      className="px-3 py-1 text-xs text-white/40 hover:text-brand-purple bg-white/5 hover:bg-brand-purple/10 rounded-full border border-transparent hover:border-brand-purple/30 transition-all duration-300"
-                    >
-                      {tag}
-                    </Link>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Right Side - 3D Card Preview */}
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="hidden lg:block relative"
-            >
-              <FloatingElements />
-
-              {/* Main Preview Card */}
-              <motion.div
-                animate={{
-                  y: [0, -10, 0],
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="relative"
-              >
-                {/* Card Glow */}
-                <div className="absolute -inset-1 bg-gradient-to-r from-brand-purple via-brand-gold to-brand-purple rounded-3xl blur-2xl opacity-30 animate-gradient" />
-
-                {/* Card */}
-                <div className="relative glass-modal p-6">
-                  {/* Rank Badge */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-brand-gold">
-                        Mythical Glory
-                      </span>
-                    </div>
-                    <span className="badge-purple">Verified</span>
-                  </div>
-
-                  {/* Heroes Grid */}
-                  <div className="grid grid-cols-4 gap-2 mb-4">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                      <div
-                        key={i}
-                        className="aspect-square bg-white/5 rounded-xl border border-glass-border flex items-center justify-center"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-purple/30 to-brand-gold/30" />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    {[
-                      { label: "Heroes", value: "121" },
-                      { label: "Skins", value: "342" },
-                      { label: "Collector", value: "12" },
-                      { label: "Legend", value: "5" },
-                    ].map((stat) => (
-                      <div
-                        key={stat.label}
-                        className="text-center p-2 bg-white/5 rounded-lg"
-                      >
-                        <div className="text-brand-gold font-bold">
-                          {stat.value}
-                        </div>
-                        <div className="text-xs text-white/40">
-                          {stat.label}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Price */}
-                  <div className="flex items-center justify-between pt-4 border-t border-glass-border">
-                    <div>
-                      <div className="text-xs text-white/40">Price</div>
-                      <div className="text-2xl font-bold text-gradient-gold">
-                        $1,299
-                      </div>
-                    </div>
-                    <Button variant="primary" size="sm">
-                      View Account
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Floating Secondary Cards */}
-              <motion.div
-                animate={{
-                  y: [10, -5, 10],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1,
-                }}
-                className="absolute -top-8 -right-8 glass-card p-4 w-48"
-              >
-                <div className="flex items-center gap-2">
-                  <div>
-                    <div className="text-xs text-white/40">Collector Skins</div>
-                    <div className="text-sm font-bold text-cyber-neon">
-                      Premium Accounts
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div
-                animate={{
-                  y: [-5, 10, -5],
-                }}
-                transition={{
-                  duration: 3.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 2,
-                }}
-                className="absolute -bottom-6 -left-8 glass-card p-4 w-44"
-              >
-                <div className="flex items-center gap-2">
-                  <div>
-                    <div className="text-xs text-white/40">100% Secure</div>
-                    <div className="text-sm font-bold text-brand-gold">
-                      Escrow Protected
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
+    <div className="relative h-screen w-full overflow-hidden bg-black">
+      {/* Loading Screen */}
+      {loading && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black">
+          <div className="flex gap-2">
+            <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce [animation-delay:0s]" />
+            <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+            <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce [animation-delay:0.4s]" />
           </div>
         </div>
-      </motion.div>
+      )}
 
-      {/* Bottom Gradient Fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-brand-dark to-transparent pointer-events-none" />
-    </section>
+      {/* Video Frame */}
+      <div
+        ref={frameRef}
+        className="relative z-10 h-full w-full overflow-hidden"
+      >
+        {/* Background Video */}
+        <video
+          key={`bg-${currentIndex}`}
+          ref={backgroundVideoRef}
+          src={getVideoSrc(currentIndex === totalVideos - 1 ? 1 : currentIndex)}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          className="absolute inset-0 w-full h-full object-cover"
+          onLoadedData={handleBackgroundLoaded}
+        />
+
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/60" />
+
+        {/* Mini Video Preview - Center */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-40 h-40 sm:w-56 sm:h-56 cursor-pointer rounded-xl overflow-hidden">
+          <VideoPreview>
+            <div
+              onClick={handleMiniVdClick}
+              className="w-full h-full scale-50 opacity-0 hover:scale-100 hover:opacity-100 transition-all duration-500"
+            >
+              <video
+                key={`preview-${currentIndex}`}
+                ref={previewVideoRef}
+                src={getVideoSrc((currentIndex % totalVideos) + 1)}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                className="w-full h-full scale-150 object-cover"
+              />
+            </div>
+          </VideoPreview>
+        </div>
+
+        {/* Next Video (hidden, expands on click) */}
+        <video
+          key={`next-${currentIndex}`}
+          ref={nextVideoRef}
+          src={getVideoSrc(currentIndex)}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 invisible z-20 w-40 h-40 object-cover"
+        />
+
+        {/* Content */}
+        <div className="absolute inset-0 z-40">
+          <div className="pt-20 sm:pt-24 px-5 sm:px-10">
+            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black text-white leading-none tracking-tighter">
+              Find Your
+              <br />
+              <span className="text-transparent bg-clip-text bg-amber-500  ">
+                Dream
+              </span>{" "}
+              Account
+            </h1>
+
+            <p className="text-white/50 text-lg mt-4 max-w-xs">
+              Premium MLBB Accounts
+              <br />
+              Rare Skins & High Ranks
+            </p>
+
+            <div className="flex flex-wrap gap-3 mt-6">
+              <Link to="/marketplace">
+                <button className="flex items-center gap-2 px-5 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/25 transition-all">
+                  <HiOutlineSearch className="w-5 h-5" />
+                  Browse
+                </button>
+              </Link>
+
+              <Link to="/sell">
+                <button className="flex items-center gap-2 px-5 py-3 bg-amber-500 text-black rounded-xl font-semibold hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/25 transition-all">
+                  <HiOutlineLightningBolt className="w-5 h-5" />
+                  Sell
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-}
+};
+
+export default HeroSection;

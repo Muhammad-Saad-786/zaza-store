@@ -61,6 +61,54 @@ export default function AccountDetail() {
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
 
+  // Add state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDescription, setReportDescription] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+
+  // Add report reasons
+  const reportReasons = [
+    "Scam or Fraud",
+    "Misleading Description",
+    "Fake Screenshots",
+    "Inappropriate Content",
+    "Duplicate Listing",
+    "Other",
+  ];
+
+  // Submit report function
+  const submitReport = async () => {
+    if (!reportReason) {
+      toast.error("Please select a reason");
+      return;
+    }
+
+    setReportSubmitting(true);
+    try {
+      const { error } = await supabase.from("reports").insert([
+        {
+          reported_by: user.id,
+          reported_user_id: account.seller_id,
+          reported_account_id: account.id,
+          reason: reportReason,
+          description: reportDescription,
+        },
+      ]);
+
+      if (error) throw error;
+
+      toast.success("Report submitted. Our team will review it.");
+      setShowReportModal(false);
+      setReportReason("");
+      setReportDescription("");
+    } catch (error) {
+      toast.error("Failed to submit report");
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
   // Add this state
   const [sellerRating, setSellerRating] = useState(null);
   const [sellerReviewCount, setSellerReviewCount] = useState(0);
@@ -638,7 +686,11 @@ export default function AccountDetail() {
                           {account.seller?.username}
                         </span>
                         {account.seller?.verified_seller && (
-                          <HiOutlineShieldCheck className="w-5 h-5 text-cyber-neon" />
+                          <img
+                            src="/blue-verify-badge.png"
+                            alt="Verified"
+                            className="w-5 h-5 object-contain"
+                          />
                         )}
                       </div>
                       <div className="flex items-center gap-1 mt-1">
@@ -697,7 +749,7 @@ export default function AccountDetail() {
                     <div
                       className={`text-3xl font-extrabold ${isSold ? "text-red-400" : "text-gradient-gold"}`}
                     >
-                      {isSold ? "SOLD" : `$${account.price.toLocaleString()}`}
+                      {isSold ? "SOLD" : `${account.price.toLocaleString()} Rs`}
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                       <span
@@ -766,7 +818,9 @@ export default function AccountDetail() {
                         variant="primary"
                         size="lg"
                         className="w-full"
-                        onClick={() => openBuyConfirm(account)}
+                        onClick={() =>
+                          openBuyConfirm({ ...account, images: images || [] })
+                        }
                       >
                         <HiOutlineCheck className="w-5 h-5" />
                         Buy Now
@@ -812,7 +866,10 @@ export default function AccountDetail() {
                     {account.views.toLocaleString()} views
                   </div>
 
-                  <button className="flex items-center justify-center gap-1 mt-4 mx-auto text-xs text-white/20 hover:text-red-400 transition-colors">
+                  <button
+                    onClick={() => setShowReportModal(true)}
+                    className="flex items-center justify-center gap-1 mt-4 mx-auto text-xs text-white/20 hover:text-red-400 transition-colors"
+                  >
                     <HiOutlineFlag className="w-3 h-3" />
                     Report Listing
                   </button>
@@ -823,6 +880,69 @@ export default function AccountDetail() {
         </div>
       </div>
       <BuyConfirmModal />
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-modal w-full max-w-md p-6"
+          >
+            <h3 className="text-lg font-bold text-white mb-4">
+              Report Listing
+            </h3>
+
+            <p className="text-sm text-white/40 mb-4">
+              Report this account:{" "}
+              <span className="text-white">{account.title}</span>
+            </p>
+
+            <label className="block text-sm text-white/60 mb-2">Reason</label>
+            <div className="space-y-2 mb-4">
+              {reportReasons.map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => setReportReason(reason)}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all ${
+                    reportReason === reason
+                      ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                      : "bg-white/5 text-white/50 hover:bg-white/10 border border-transparent"
+                  }`}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            <label className="block text-sm text-white/60 mb-2">
+              Description (optional)
+            </label>
+            <textarea
+              value={reportDescription}
+              onChange={(e) => setReportDescription(e.target.value)}
+              placeholder="Provide additional details..."
+              rows={3}
+              className="input-glass w-full resize-none mb-4"
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={submitReport}
+                disabled={reportSubmitting || !reportReason}
+                className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 disabled:opacity-50 transition-all"
+              >
+                {reportSubmitting ? "Submitting..." : "Submit Report"}
+              </button>
+              <button
+                onClick={() => setShowReportModal(false)}
+                className="flex-1 px-4 py-3 bg-white/5 text-white/60 rounded-xl hover:bg-white/10 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

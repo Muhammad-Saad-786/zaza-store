@@ -265,6 +265,13 @@ export default function AccountCard({ account, viewMode }) {
                     <span className="text-xs text-white/40">
                       {account.seller.username}
                     </span>
+                    {account.seller?.verified_seller && (
+                      <img
+                        src="/blue-verify-badge.png"
+                        alt="Verified"
+                        className="w-4 h-4 object-contain"
+                      />
+                    )}
                   </div>
                 )}
               </div>

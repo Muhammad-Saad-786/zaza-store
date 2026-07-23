@@ -121,7 +121,6 @@ const useAuthStore = create((set, get) => ({
 
       if (error) throw error;
 
-      // Don't manually create profile - the database trigger handles it
       // Just return success
       return { success: true, user: data.user };
     } catch (error) {

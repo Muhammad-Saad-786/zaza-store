@@ -48,6 +48,7 @@ const navItems = [
     label: "Verification",
     path: "/seller-dashboard/verification",
   },
+
   { icon: HiOutlineUser, label: "Profile", path: "/seller-dashboard/profile" },
   { icon: HiOutlineCog, label: "Settings", path: "/seller-dashboard/settings" },
 ];
@@ -177,6 +178,12 @@ export default function SellerDashboardLayout() {
               className="text-sm text-brand-gold hover:text-brand-gold-light transition-colors"
             >
               + New Listing
+            </Link>
+            <Link
+              to="/seller-dashboard/verification"
+              className="text-sm text-brand-gold hover:text-brand-gold-light transition-colors"
+            >
+              Verify Account
             </Link>
           </div>
         </div>

@@ -48,10 +48,21 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: FiTwitter, href: "#", label: "Twitter" },
-  { icon: SiDiscord, href: "#", label: "Discord" },
-  { icon: FiGithub, href: "#", label: "Github" },
-  { icon: FiYoutube, href: "#", label: "Youtube" },
+  {
+    icon: SiDiscord,
+    href: "https://discord.com/channels/@me/1348013074589945866",
+    label: "Discord",
+  },
+  {
+    icon: FiGithub,
+    href: "https://github.com/Muhammad-Saad-786",
+    label: "Github",
+  },
+  {
+    icon: FiYoutube,
+    href: "https://www.youtube.com/@zaza-mlbb",
+    label: "Youtube",
+  },
 ];
 
 export default function Footer() {
@@ -101,6 +112,8 @@ export default function Footer() {
               {socialLinks.map((social) => (
                 <motion.a
                   key={social.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   href={social.href}
                   whileHover={{ scale: 1.15, y: -2 }}
                   whileTap={{ scale: 0.9 }}

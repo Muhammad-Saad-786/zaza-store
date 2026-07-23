@@ -20,14 +20,67 @@
   --font-display: "Inter Tight", Inter, ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
 
+.animate-bounce {
+  animation: bounce 1.4s ease-in-out infinite;
+}
 @layer base {
   html {
     font-family: var(--font-sans);
     color-scheme: dark;
     background: var(--color-brand-darker);
   }
+  /* Special font styling */
+  .special-font {
+    font-family: "Cabinet Grotesk", "Inter", sans-serif;
+  }
 
+  .hero-heading {
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 0.9;
+  }
+
+  .hero-heading b {
+    font-weight: 800;
+    color: #f59e0b; /* brand-gold */
+  }
+
+  /* Center absolute */
+  .absolute-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Flex center */
+  .flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Bounce animation for loading dots */
+  @keyframes bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-15px);
+    }
+  }
   body {
     margin: 0;
     min-width: 320px;
@@ -214,5 +267,74 @@
     border-color: rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.06);
     color: white;
+  }
+}
+
+/* Hero Section Styles */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.mask-clip-path {
+  clip-path: polygon(14% 0, 72% 0, 88% 90%, 0 95%);
+}
+
+.special-font {
+  font-family: "Cabinet Grotesk", "Inter", sans-serif;
+}
+
+.hero-heading {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.9;
+}
+
+.hero-heading b {
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+/* Loading Animation */
+.three-body {
+  display: flex;
+  gap: 8px;
+}
+
+.three-body__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #8b5cf6;
+  animation: threeBodyBounce 1.4s ease-in-out infinite both;
+}
+
+.three-body__dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.three-body__dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes threeBodyBounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
   }
 }

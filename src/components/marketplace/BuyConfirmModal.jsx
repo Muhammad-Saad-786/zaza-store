@@ -51,8 +51,29 @@ export default function BuyConfirmModal() {
               {/* Account Info */}
               <div className="glass-card p-4 mb-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-purple/20 to-brand-gold/10 flex items-center justify-center text-xl">
-                    🎮
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-purple/20 to-brand-gold/10 flex items-center justify-center text-xl overflow-hidden flex-shrink-0">
+                    {/* Try multiple image sources */}
+                    {selectedAccount.images?.[0]?.url ? (
+                      <img
+                        src={selectedAccount.images[0].url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    ) : selectedAccount.image_urls?.[0] ? (
+                      <img
+                        src={selectedAccount.image_urls[0]}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <span>🎮</span>
+                    )}
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-sm font-semibold text-white line-clamp-1">
@@ -66,7 +87,7 @@ export default function BuyConfirmModal() {
                 <div className="flex items-center justify-between pt-3 border-t border-glass-border">
                   <span className="text-sm text-white/60">Price</span>
                   <span className="text-xl font-bold text-gradient-gold">
-                    ${selectedAccount.price?.toLocaleString()}
+                    {selectedAccount.price?.toLocaleString()} Rs
                   </span>
                 </div>
               </div>

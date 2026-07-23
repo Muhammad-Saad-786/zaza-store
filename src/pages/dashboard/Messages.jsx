@@ -158,6 +158,13 @@ export default function Messages() {
                       <span className="text-sm font-medium text-white truncate">
                         {conv.username}
                       </span>
+                      {conv.verified_seller && (
+                        <img
+                          src="/blue-verify-badge.png"
+                          alt="Verified"
+                          className="w-4 h-4 object-contain flex-shrink-0"
+                        />
+                      )}
                     </div>
                   </div>
                 </button>

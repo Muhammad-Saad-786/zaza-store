@@ -3,44 +3,16 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   HiOutlineUsers,
+  HiOutlineUserGroup,
   HiOutlineCollection,
   HiOutlineShoppingBag,
   HiOutlineCurrencyDollar,
   HiOutlineShieldCheck,
+  HiOutlineFlag,
+  HiOutlineBan,
 } from "react-icons/hi";
 import useAdminStore from "../../stores/useAdminStore";
 import GlassCard from "../../components/ui/GlassCard";
-
-const statCards = [
-  {
-    key: "totalUsers",
-    label: "Total Users",
-    icon: HiOutlineUsers,
-    color: "text-blue-400",
-    href: "/admin/users",
-  },
-  {
-    key: "totalAccounts",
-    label: "Total Accounts",
-    icon: HiOutlineCollection,
-    color: "text-brand-purple",
-    href: "/admin/accounts",
-  },
-  {
-    key: "totalOrders",
-    label: "Total Orders",
-    icon: HiOutlineShoppingBag,
-    color: "text-cyber-neon",
-    href: "/admin/orders",
-  },
-  {
-    key: "totalRevenue",
-    label: "Total Revenue",
-    icon: HiOutlineCurrencyDollar,
-    color: "text-brand-gold",
-    isCurrency: true,
-  },
-];
 
 export default function AdminOverview() {
   const { stats, fetchStats } = useAdminStore();
@@ -48,6 +20,89 @@ export default function AdminOverview() {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  const cards = [
+    {
+      label: "Total Users",
+      value: stats.totalUsers,
+      icon: HiOutlineUsers,
+      color: "text-blue-400",
+      href: "/admin/users",
+    },
+    {
+      label: "Buyers",
+      value: stats.totalBuyers,
+      icon: HiOutlineUserGroup,
+      color: "text-cyan-400",
+      href: "/admin/users",
+    },
+    {
+      label: "Sellers",
+      value: stats.totalSellers,
+      icon: HiOutlineShieldCheck,
+      color: "text-amber-400",
+      href: "/admin/users",
+    },
+    {
+      label: "Banned",
+      value: stats.totalBanned,
+      icon: HiOutlineBan,
+      color: "text-red-400",
+      href: "/admin/users",
+    },
+    {
+      label: "Accounts",
+      value: stats.totalAccounts,
+      icon: HiOutlineCollection,
+      color: "text-purple-400",
+      href: "/admin/accounts",
+    },
+    {
+      label: "Active",
+      value: stats.activeAccounts,
+      icon: HiOutlineCollection,
+      color: "text-green-400",
+      href: "/admin/accounts",
+    },
+    {
+      label: "Orders",
+      value: stats.totalOrders,
+      icon: HiOutlineShoppingBag,
+      color: "text-amber-400",
+      href: "/admin/orders",
+    },
+    {
+      label: "Revenue",
+      value: `$${stats.totalRevenue.toLocaleString()}`,
+      icon: HiOutlineCurrencyDollar,
+      color: "text-green-400",
+      href: "/admin/orders",
+    },
+  ];
+
+  const alerts = [
+    {
+      label: "Pending Verifications",
+      value: stats.pendingVerifications,
+      color: "text-yellow-400",
+      href: "/admin/verifications",
+      icon: HiOutlineShieldCheck,
+    },
+    {
+      label: "Pending Reports",
+      value: stats.pendingReports,
+      color: "text-red-400",
+      href: "/admin/reports",
+      icon: HiOutlineFlag,
+    },
+    {
+      label: "Pending Orders",
+      value: stats.pendingOrders,
+      color: "text-blue-400",
+      href: "/admin/orders",
+      icon: HiOutlineShoppingBag,
+    },
+  ];
 
   return (
     <motion.div
@@ -62,45 +117,51 @@ export default function AdminOverview() {
         <p className="text-white/40 mt-1">Platform management dashboard</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, i) => (
+      {/* Alerts */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {alerts.map((alert, i) => (
           <motion.div
-            key={stat.key}
+            key={alert.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Link to={stat.href}>
-              <GlassCard className="p-6 hover:border-red-500/30 transition-all">
-                <stat.icon className={`w-8 h-8 ${stat.color} mb-3`} />
-                <div className="text-3xl font-extrabold text-white">
-                  {stat.isCurrency ? "$" : ""}
-                  {stats[stat.key]?.toLocaleString() || 0}
+            <Link to={alert.href}>
+              <GlassCard className="p-5 hover:border-red-500/30 transition-all">
+                <div className="flex items-center justify-between">
+                  <alert.icon className={`w-8 h-8 ${alert.color}`} />
+                  <span className={`text-2xl font-extrabold ${alert.color}`}>
+                    {alert.value}
+                  </span>
                 </div>
-                <div className="text-sm text-white/40 mt-1">{stat.label}</div>
+                <p className="text-white/40 text-sm mt-2">{alert.label}</p>
               </GlassCard>
             </Link>
           </motion.div>
         ))}
       </div>
 
-      {stats.pendingVerifications > 0 && (
-        <Link to="/admin/verifications">
-          <GlassCard className="p-6 border border-yellow-500/30 hover:border-yellow-500/50 transition-all">
-            <div className="flex items-center gap-3">
-              <HiOutlineShieldCheck className="w-8 h-8 text-yellow-400" />
-              <div>
-                <p className="text-white font-semibold">
-                  {stats.pendingVerifications} Pending Verifications
-                </p>
-                <p className="text-white/40 text-sm">
-                  Seller verification requests need review
-                </p>
-              </div>
-            </div>
-          </GlassCard>
-        </Link>
-      )}
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {cards.map((card, i) => (
+          <motion.div
+            key={card.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+          >
+            <Link to={card.href}>
+              <GlassCard className="p-5 hover:border-white/10 transition-all">
+                <card.icon className={`w-6 h-6 ${card.color} mb-3`} />
+                <div className="text-2xl font-extrabold text-white">
+                  {card.value}
+                </div>
+                <div className="text-white/40 text-sm mt-1">{card.label}</div>
+              </GlassCard>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
     </motion.div>
   );
 }
