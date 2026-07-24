@@ -1,7 +1,11 @@
+// Use relative path in production (Vercel), localhost in development
+const API_URL = import.meta.env.PROD
+  ? "/api/check-player"
+  : "http://localhost:3001/api/check-player";
+
 export async function checkPlayerName(userId, zoneId) {
   try {
-    // Use our backend proxy (port 3001)
-    const response = await fetch("http://localhost:3001/api/check-player", {
+    const response = await fetch(API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -44,13 +48,6 @@ export async function checkPlayerName(userId, zoneId) {
     }
   } catch (error) {
     console.error("MLBB API error:", error);
-    if (error.message.includes("Failed to fetch")) {
-      return {
-        success: false,
-        error:
-          "Cannot connect to server. Make sure backend is running on port 3001.",
-      };
-    }
     return {
       success: false,
       error: error.message || "Connection error",
