@@ -17,7 +17,6 @@ export async function checkPlayerName(userId, zoneId) {
     });
 
     const data = await response.json();
-    console.log("Player check response:", data);
 
     if (data && data.result && data.result.username) {
       const encodedUsername = data.result.username;
@@ -47,7 +46,6 @@ export async function checkPlayerName(userId, zoneId) {
       };
     }
   } catch (error) {
-    console.error("MLBB API error:", error);
     return {
       success: false,
       error: error.message || "Connection error",
