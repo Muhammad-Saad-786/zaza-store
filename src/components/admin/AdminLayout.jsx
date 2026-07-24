@@ -11,7 +11,7 @@ import {
   HiOutlineMenu,
   HiOutlineX,
   HiOutlineLogout,
-  HiOutlineChartBar,
+  HiOutlineExclamation,
 } from "react-icons/hi";
 import useAuthStore from "../../stores/useAuthStore";
 import Logo from "../shared/Logo";
@@ -27,6 +27,7 @@ const navItems = [
     path: "/admin/verifications",
   },
   { icon: HiOutlineFlag, label: "Reports", path: "/admin/reports" },
+  { icon: HiOutlineExclamation, label: "Disputes", path: "/admin/disputes" },
 ];
 
 export default function AdminLayout() {

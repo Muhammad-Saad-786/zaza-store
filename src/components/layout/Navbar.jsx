@@ -37,6 +37,10 @@ const navLinks = [
     label: "Sell Account",
     href: "/sell",
   },
+  {
+    label: "Player Checker",
+    href: "/player-checker",
+  },
 ];
 
 export default function Navbar() {

@@ -19,15 +19,15 @@ const useAccountDetailStore = create((set, get) => ({
         .select(
           `
     *,
-    seller:profiles (
-      username,
-      avatar_url,
-      verified_seller,
-      rating,
-      total_sales,
-      created_at,
-      bio
-    )
+      seller:profiles!accounts_seller_id_fkey (
+        username,
+        avatar_url,
+        verified_seller,
+        rating,
+        total_sales,
+        created_at,
+        bio
+      )
   `,
         )
         .eq("id", id)

@@ -259,13 +259,47 @@ const useAdminStore = create((set, get) => ({
     try {
       const { data, error } = await supabase
         .from("accounts")
-        .select(
-          `*, seller:profiles(username, email), images:account_images(url, is_cover)`,
-        )
+        .select(`*`)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      set({ accounts: data || [], loading: false });
+      if (error) {
+        console.error("Admin fetch accounts error:", error);
+        throw error;
+      }
+
+      console.log("Admin accounts fetched:", data?.length, "accounts");
+
+      // Fetch seller info and images separately
+      if (data && data.length > 0) {
+        const sellerIds = [
+          ...new Set(data.map((a) => a.seller_id).filter(Boolean)),
+        ];
+        const accountIds = data.map((a) => a.id);
+
+        // Fetch sellers
+        const { data: sellers } = await supabase
+          .from("profiles")
+          .select("id, username, email")
+          .in("id", sellerIds);
+
+        // Fetch images
+        const { data: images } = await supabase
+          .from("account_images")
+          .select("*")
+          .in("account_id", accountIds)
+          .order("sort_order", { ascending: true });
+
+        // Merge data
+        const accountsWithDetails = data.map((account) => ({
+          ...account,
+          seller: sellers?.find((s) => s.id === account.seller_id) || null,
+          images: images?.filter((img) => img.account_id === account.id) || [],
+        }));
+
+        set({ accounts: accountsWithDetails, loading: false });
+      } else {
+        set({ accounts: [], loading: false });
+      }
     } catch (error) {
       console.error("Failed to fetch accounts:", error);
       set({ loading: false });
@@ -413,7 +447,7 @@ const useAdminStore = create((set, get) => ({
         },
       ]);
 
-      toast.success("Verification approved! Blue tick granted ✅");
+      toast.success("Verification approved! Blue tick granted ");
       get().fetchVerifications();
       get().fetchStats();
       get().fetchUsers();

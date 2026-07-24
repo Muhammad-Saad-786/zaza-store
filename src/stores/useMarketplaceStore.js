@@ -63,20 +63,18 @@ const useMarketplaceStore = create((set, get) => ({
         .select(
           `
     *,
-    seller:profiles (
+    seller:profiles!accounts_seller_id_fkey (
       username,
       avatar_url,
       verified_seller,
       rating
     ),
-    images:account_images (
-      url,
-      is_cover
-    )
+    images:account_images(url, is_cover)
   `,
           { count: "exact" },
         )
-        .in("status", ["active", "pending", "sold"]);
+        .in("status", ["active", "pending", "sold"])
+        .eq("approval_status", "approved");
 
       // Apply search
       if (filters.search) {
@@ -113,9 +111,6 @@ const useMarketplaceStore = create((set, get) => ({
         case "newest":
           query = query.order("created_at", { ascending: false });
           break;
-        case "oldest":
-          query = query.order("created_at", { ascending: true });
-          break;
         case "price-low":
           query = query.order("price", { ascending: true });
           break;
@@ -124,9 +119,6 @@ const useMarketplaceStore = create((set, get) => ({
           break;
         case "popular":
           query = query.order("views", { ascending: false });
-          break;
-        case "rank":
-          query = query.order("stars", { ascending: false });
           break;
         default:
           query = query.order("created_at", { ascending: false });
@@ -139,7 +131,11 @@ const useMarketplaceStore = create((set, get) => ({
 
       const { data, error, count } = await query;
 
-      if (error) throw error;
+      // DETAILED ERROR LOGGING
+      if (error) {
+        console.error("Error message:", error.message);
+        throw error;
+      }
 
       set({
         accounts: data || [],
@@ -147,7 +143,8 @@ const useMarketplaceStore = create((set, get) => ({
         loading: false,
       });
     } catch (error) {
-      set({ error: error.message, loading: false });
+      console.error("Catch error:", error.message || error);
+      set({ error: error.message || "Failed to fetch", loading: false });
     }
   },
 

@@ -26,10 +26,14 @@ export default function ImagesStep() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-white">Upload Images</h2>
+      <h2 className="text-xl font-bold text-white">Upload Screenshots</h2>
       <p className="text-white/40 text-sm">
-        Add screenshots of your account. First image will be the cover. Max 10
-        images, 5MB each.
+        Upload at least 5 screenshots showing your account details. Include:
+        Profile page, Hero list, Skin collection, Rank, and Battle history.
+        <span className="text-yellow-400 block mt-1">
+          ⚠️ {5 - formData.images.length} more image
+          {5 - formData.images.length !== 1 ? "s" : ""} required
+        </span>
       </p>
 
       {/* Upload Zone */}

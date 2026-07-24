@@ -189,7 +189,7 @@ const useSellAccountStore = create((set, get) => ({
     return uploadedUrls;
   },
 
-  // Submit listing
+  // Update submitListing
   submitListing: async () => {
     set({ isSubmitting: true, error: null });
     const { formData } = get();
@@ -198,11 +198,29 @@ const useSellAccountStore = create((set, get) => ({
     try {
       if (!user) throw new Error("Must be logged in");
 
+      // Validate listing
+      const errors = get().validateListing();
+      if (errors.length > 0) {
+        throw new Error(errors.join(". "));
+      }
+
       // Upload images first
       let imageUrls = [];
       if (formData.images.length > 0) {
         imageUrls = await get().uploadImages();
       }
+
+      // Determine approval status
+      // Auto-approve verified sellers with 10+ completed orders
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("verified_seller, completed_orders")
+        .eq("id", user.id)
+        .single();
+
+      const autoApprove =
+        profile?.verified_seller && (profile?.completed_orders || 0) >= 10;
+      const approvalStatus = autoApprove ? "approved" : "pending";
 
       // Create account listing
       const { data: account, error } = await supabase
@@ -210,19 +228,20 @@ const useSellAccountStore = create((set, get) => ({
         .insert([
           {
             seller_id: user.id,
-            title: formData.title || "Untitled",
-            description: formData.description || "",
-            price: parseFloat(formData.price) || 0,
-            rank: formData.rank || "Unknown",
-            highest_rank: formData.highestRank || formData.rank || "Unknown",
+            title: formData.title,
+            description: formData.description,
+            price: parseFloat(formData.price),
+            rank: formData.rank,
+            highest_rank: formData.highestRank || formData.rank,
             stars: parseInt(formData.stars) || 0,
-            server: formData.server || "Unknown",
+            server: formData.server,
             win_rate: parseFloat(formData.winRate) || 0,
             hero_count: parseInt(formData.heroCount) || 0,
             skin_count: parseInt(formData.skinCount) || 0,
             collector_count: parseInt(formData.collectorCount) || 0,
             legend_count: parseInt(formData.legendCount) || 0,
             status: "active",
+            approval_status: approvalStatus,
           },
         ])
         .select()
@@ -230,7 +249,7 @@ const useSellAccountStore = create((set, get) => ({
 
       if (error) throw error;
 
-      // Save images to account_images table
+      // Save images
       if (imageUrls.length > 0) {
         const imageRecords = imageUrls.map((url, index) => ({
           account_id: account.id,
@@ -239,19 +258,22 @@ const useSellAccountStore = create((set, get) => ({
           sort_order: index,
         }));
 
-        const { error: imageError } = await supabase
-          .from("account_images")
-          .insert(imageRecords);
-
-        if (imageError) {
-          console.error("Failed to save image records:", imageError);
-        }
+        await supabase.from("account_images").insert(imageRecords);
       }
 
       // Clear draft
       localStorage.removeItem(get().draftKey);
-
       set({ isSubmitting: false });
+
+      if (approvalStatus === "pending") {
+        return {
+          success: true,
+          accountId: account.id,
+          pending: true,
+          message: "Listing submitted for review! Admin will approve shortly.",
+        };
+      }
+
       return { success: true, accountId: account.id };
     } catch (error) {
       console.error("Submit error:", error);
@@ -318,6 +340,32 @@ const useSellAccountStore = create((set, get) => ({
       error: null,
     });
     get().clearDraft();
+  },
+  // Add this validation function
+  validateListing: () => {
+    const { formData } = get();
+    const errors = [];
+
+    if (!formData.title || formData.title.length < 10) {
+      errors.push("Title must be at least 10 characters");
+    }
+    if (!formData.description || formData.description.length < 20) {
+      errors.push("Description must be at least 20 characters");
+    }
+    if (!formData.price || parseFloat(formData.price) < 1) {
+      errors.push("Price must be at least $1");
+    }
+    if (!formData.rank) {
+      errors.push("Please select a rank");
+    }
+    if (!formData.server) {
+      errors.push("Please select a server");
+    }
+    if (formData.images.length < 5) {
+      errors.push("You must upload at least 5 screenshots");
+    }
+
+    return errors;
   },
 }));
 

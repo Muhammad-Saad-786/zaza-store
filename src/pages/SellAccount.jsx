@@ -47,7 +47,18 @@ export default function SellAccount() {
   const handleSubmit = async () => {
     const result = await submitListing();
     if (result.success) {
-      toast.success("Account listed successfully!", { icon: "🎉" });
+      if (result.pending) {
+        toast.success(
+          "Listing submitted for review! Admin will approve shortly.",
+          {
+            icon: "⏳",
+            duration: 5000,
+          },
+        );
+        resetForm(); // Reset the form after successful submission
+      } else {
+        toast.success("Account listed successfully!", { icon: "🎉" });
+      }
       navigate(`/account/${result.accountId}`);
     } else {
       toast.error(result.error || "Failed to list account");

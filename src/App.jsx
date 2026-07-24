@@ -39,6 +39,8 @@ import AdminAccounts from "./pages/admin/Accounts";
 import AdminOrders from "./pages/admin/Orders";
 import Verifications from "./pages/admin/Verifications";
 import Reports from "./pages/admin/Reports";
+import Disputes from "./pages/admin/Disputes";
+import PlayerChecker from "./components/mlbb/PlayerChecker";
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -94,6 +96,8 @@ function App() {
           <Route path="/test" element={<TestConnection />} />
           <Route path="/select-role" element={<SelectRole />} />
           <Route path="/seller/:id" element={<SellerProfile />} />
+          <Route path="/player-checker" element={<PlayerChecker />} />
+
           <Route
             path="/profile"
             element={<Navigate to="/dashboard/profile" replace />}
@@ -170,6 +174,7 @@ function App() {
             <Route path="orders" element={<AdminOrders />} />
             <Route path="verifications" element={<Verifications />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="disputes" element={<Disputes />} />
           </Route>
 
           {/* 404 */}
