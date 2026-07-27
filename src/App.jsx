@@ -41,6 +41,7 @@ import Verifications from "./pages/admin/Verifications";
 import Reports from "./pages/admin/Reports";
 import Disputes from "./pages/admin/Disputes";
 import PlayerChecker from "./components/mlbb/PlayerChecker";
+import useOnlineStatus from "./stores/useOnlineStatus";
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -55,6 +56,35 @@ function App() {
   const fetchWishlistIds = useWishlistStore((state) => state.fetchWishlistIds);
   const clearWishlist = useWishlistStore((state) => state.clearWishlist);
   const user = useAuthStore((state) => state.user);
+  const { setOnline, setOffline, updateLastSeen, subscribeToOnlineUsers } =
+    useOnlineStatus();
+  // Subscribe to online users
+  useEffect(() => {
+    const unsubscribe = subscribeToOnlineUsers();
+    return () => unsubscribe();
+  }, []);
+
+  // Set online/offline when user logs in/out
+  useEffect(() => {
+    if (user) {
+      setOnline();
+
+      // Heartbeat every 30 seconds
+      const heartbeat = setInterval(() => {
+        updateLastSeen();
+      }, 30000);
+
+      // Set offline on close/refresh
+      const handleBeforeUnload = () => setOffline();
+      window.addEventListener("beforeunload", handleBeforeUnload);
+
+      return () => {
+        clearInterval(heartbeat);
+        setOffline();
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+      };
+    }
+  }, [user]);
   useEffect(() => {
     initialize();
   }, [initialize]);

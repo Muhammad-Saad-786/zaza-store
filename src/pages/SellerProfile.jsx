@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import OnlineIndicator from "../components/ui/OnlineIndicator";
 import {
   HiOutlineShieldCheck,
   HiOutlineStar,
@@ -142,6 +143,8 @@ export default function SellerProfile() {
                   <h1 className="text-2xl font-bold text-white">
                     {seller.username}
                   </h1>
+                  <OnlineIndicator userId={seller.id} showText size="md" />
+
                   {seller.verified_seller && (
                     <img
                       src="/blue-verify-badge.png"

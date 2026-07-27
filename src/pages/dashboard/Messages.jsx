@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
+import OnlineIndicator from "../../components/ui/OnlineIndicator";
 import {
   HiOutlinePaperAirplane,
   HiOutlineUser,
@@ -142,6 +143,7 @@ export default function Messages() {
                       <img
                         src={conv.avatar_url}
                         alt=""
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover rounded-full"
                       />
                     ) : (
@@ -202,6 +204,11 @@ export default function Messages() {
                   <p className="text-sm font-medium text-white">
                     {activeConversation.username}
                   </p>
+                  <OnlineIndicator
+                    userId={activeConversation.userId}
+                    showText
+                    size="sm"
+                  />
                 </div>
               </div>
 

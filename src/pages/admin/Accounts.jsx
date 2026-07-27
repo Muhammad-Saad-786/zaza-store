@@ -241,6 +241,7 @@ export default function AdminAccounts() {
                 <button
                   onClick={() => deleteAccount(account.id)}
                   className="p-2 text-white/30 hover:text-red-400 transition-colors"
+                  title="Delete"
                 >
                   <HiOutlineTrash className="w-4 h-4" />
                 </button>

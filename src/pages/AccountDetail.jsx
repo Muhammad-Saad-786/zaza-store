@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import useChatStore from "../stores/useChatStore.js";
+import OnlineIndicator from "../components/ui/OnlineIndicator.jsx";
 import {
   HiOutlineHeart,
   HiHeart,
@@ -692,6 +693,11 @@ export default function AccountDetail() {
                             className="w-5 h-5 object-contain"
                           />
                         )}
+                        <OnlineIndicator
+                          userId={account.seller_id}
+                          showText
+                          size="sm"
+                        />
                       </div>
                       <div className="flex items-center gap-1 mt-1">
                         <FiStar className="w-3 h-3 text-brand-gold fill-current" />

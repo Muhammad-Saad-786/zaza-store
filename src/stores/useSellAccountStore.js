@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import useAuthStore from "./useAuthStore";
+import toast from "react-hot-toast";
 
 const useSellAccountStore = create((set, get) => ({
   // Form state
   currentStep: 1,
-  totalSteps: 6,
+  totalSteps: 4,
   loading: false,
   error: null,
   isSubmitting: false,
@@ -30,47 +31,72 @@ const useSellAccountStore = create((set, get) => ({
   // Draft auto-save key
   draftKey: "zaza_sell_draft",
 
-  // Validation function
-  validateStep: (step, formData) => {
+  // ============ VALIDATION ============
+  validateStep: (step) => {
+    const { formData } = get();
+    const errors = [];
+
     switch (step) {
-      case 1:
-        // Basic Info Step
-        if (!formData.title?.trim()) return "Please enter a listing title";
-        if (!formData.rank) return "Please select a current rank";
-        if (!formData.server) return "Please select a server";
-        return null;
-      case 2:
-        // Details Step
-        if (!formData.description?.trim()) return "Please enter a description";
-        if (!formData.price) return "Please enter a price";
-        if (!formData.heroCount) return "Please enter hero count";
-        if (!formData.skinCount) return "Please enter skin count";
-        return null;
-      case 3:
-        // Images Step
-        if (!formData.images || formData.images.length === 0)
-          return "Please upload at least one image";
-        return null;
-      default:
-        return null;
+      case 1: // Basic Info
+        if (!formData.title || formData.title.trim().length < 10) {
+          errors.push("Title must be at least 10 characters");
+        }
+        if (!formData.rank) {
+          errors.push("Please select your current rank");
+        }
+        if (!formData.server) {
+          errors.push("Please select your server");
+        }
+        break;
+
+      case 2: // Details
+        if (!formData.price || parseFloat(formData.price) < 1) {
+          errors.push("Price must be at least $1");
+        }
+        if (!formData.description || formData.description.trim().length < 20) {
+          errors.push("Description must be at least 20 characters");
+        }
+        if (!formData.heroCount || parseInt(formData.heroCount) < 1) {
+          errors.push("Please enter total hero count");
+        }
+        if (!formData.skinCount || parseInt(formData.skinCount) < 1) {
+          errors.push("Please enter total skin count");
+        }
+        break;
+
+      case 3: // Images
+        if (!formData.images || formData.images.length < 5) {
+          errors.push(
+            `Please upload at least 5 screenshots (${formData.images?.length || 0}/5 uploaded)`,
+          );
+        }
+        break;
     }
+
+    return errors;
   },
 
-  // Navigation
+  // ============ NAVIGATION ============
   setStep: (step) => set({ currentStep: step }),
+
   nextStep: () => {
-    const { currentStep, totalSteps, formData } = get();
+    const { currentStep, totalSteps } = get();
+
+    // Validate current step
+    const errors = get().validateStep(currentStep);
+
+    if (errors.length > 0) {
+      errors.forEach((error) => toast.error(error));
+      return;
+    }
+
     if (currentStep < totalSteps) {
-      const error = get().validateStep(currentStep, formData);
-      if (error) {
-        set({ error });
-        return;
-      }
-      set({ currentStep: currentStep + 1, error: null });
+      set({ currentStep: currentStep + 1 });
       get().saveDraft();
       window.scrollTo(0, 0);
     }
   },
+
   prevStep: () => {
     const { currentStep } = get();
     if (currentStep > 1) {
@@ -79,7 +105,7 @@ const useSellAccountStore = create((set, get) => ({
     }
   },
 
-  // Update form field
+  // ============ FORM FIELDS ============
   updateField: (field, value) => {
     set((state) => ({
       formData: { ...state.formData, [field]: value },
@@ -87,7 +113,7 @@ const useSellAccountStore = create((set, get) => ({
     }));
   },
 
-  // Image management
+  // ============ IMAGE MANAGEMENT ============
   addImages: (files) => {
     const { formData } = get();
     const newImages = Array.from(files).map((file) => ({
@@ -128,7 +154,7 @@ const useSellAccountStore = create((set, get) => ({
     set({ formData: { ...formData, images }, error: null });
   },
 
-  // Upload images to Supabase
+  // ============ UPLOAD IMAGES ============
   uploadImages: async () => {
     const { formData } = get();
     const user = useAuthStore.getState().user;
@@ -146,8 +172,6 @@ const useSellAccountStore = create((set, get) => ({
         const fileExt = image.file.name.split(".").pop();
         const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 
-        console.log("Uploading:", fileName);
-
         const { data, error } = await supabase.storage
           .from("account-images")
           .upload(fileName, image.file, {
@@ -155,21 +179,14 @@ const useSellAccountStore = create((set, get) => ({
             upsert: false,
           });
 
-        if (error) {
-          console.error("Upload error:", error);
-          throw error;
-        }
-
-        console.log("Upload success:", data);
+        if (error) throw error;
 
         const {
           data: { publicUrl },
         } = supabase.storage.from("account-images").getPublicUrl(data.path);
 
-        console.log("Public URL:", publicUrl);
         uploadedUrls.push(publicUrl);
 
-        // Update image status
         set((state) => ({
           formData: {
             ...state.formData,
@@ -189,7 +206,7 @@ const useSellAccountStore = create((set, get) => ({
     return uploadedUrls;
   },
 
-  // Update submitListing
+  // ============ SUBMIT LISTING ============
   submitListing: async () => {
     set({ isSubmitting: true, error: null });
     const { formData } = get();
@@ -198,10 +215,17 @@ const useSellAccountStore = create((set, get) => ({
     try {
       if (!user) throw new Error("Must be logged in");
 
-      // Validate listing
-      const errors = get().validateListing();
-      if (errors.length > 0) {
-        throw new Error(errors.join(". "));
+      // Validate ALL steps before publishing
+      let allErrors = [];
+      for (let step = 1; step <= 3; step++) {
+        const errors = get().validateStep(step);
+        allErrors = [...allErrors, ...errors];
+      }
+
+      if (allErrors.length > 0) {
+        toast.error(allErrors[0]);
+        set({ isSubmitting: false });
+        return { success: false, error: allErrors[0] };
       }
 
       // Upload images first
@@ -211,7 +235,6 @@ const useSellAccountStore = create((set, get) => ({
       }
 
       // Determine approval status
-      // Auto-approve verified sellers with 10+ completed orders
       const { data: profile } = await supabase
         .from("profiles")
         .select("verified_seller, completed_orders")
@@ -281,7 +304,8 @@ const useSellAccountStore = create((set, get) => ({
       return { success: false, error: error.message };
     }
   },
-  // Save draft to localStorage
+
+  // ============ DRAFT MANAGEMENT ============
   saveDraft: () => {
     const { formData } = get();
     const draft = {
@@ -296,7 +320,6 @@ const useSellAccountStore = create((set, get) => ({
     localStorage.setItem(get().draftKey, JSON.stringify(draft));
   },
 
-  // Load draft
   loadDraft: () => {
     try {
       const draft = localStorage.getItem(get().draftKey);
@@ -313,12 +336,10 @@ const useSellAccountStore = create((set, get) => ({
     return false;
   },
 
-  // Clear draft
   clearDraft: () => {
     localStorage.removeItem(get().draftKey);
   },
 
-  // Reset form
   resetForm: () => {
     set({
       currentStep: 1,
@@ -340,32 +361,6 @@ const useSellAccountStore = create((set, get) => ({
       error: null,
     });
     get().clearDraft();
-  },
-  // Add this validation function
-  validateListing: () => {
-    const { formData } = get();
-    const errors = [];
-
-    if (!formData.title || formData.title.length < 10) {
-      errors.push("Title must be at least 10 characters");
-    }
-    if (!formData.description || formData.description.length < 20) {
-      errors.push("Description must be at least 20 characters");
-    }
-    if (!formData.price || parseFloat(formData.price) < 1) {
-      errors.push("Price must be at least $1");
-    }
-    if (!formData.rank) {
-      errors.push("Please select a rank");
-    }
-    if (!formData.server) {
-      errors.push("Please select a server");
-    }
-    if (formData.images.length < 5) {
-      errors.push("You must upload at least 5 screenshots");
-    }
-
-    return errors;
   },
 }));
 

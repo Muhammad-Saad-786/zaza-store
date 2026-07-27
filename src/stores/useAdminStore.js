@@ -267,8 +267,6 @@ const useAdminStore = create((set, get) => ({
         throw error;
       }
 
-      console.log("Admin accounts fetched:", data?.length, "accounts");
-
       // Fetch seller info and images separately
       if (data && data.length > 0) {
         const sellerIds = [
@@ -340,18 +338,56 @@ const useAdminStore = create((set, get) => ({
   },
 
   deleteAccount: async (accountId) => {
-    if (!confirm("Are you sure? This cannot be undone.")) return;
+    if (
+      !confirm(
+        "Are you sure? This will permanently delete this account and all related data.",
+      )
+    )
+      return;
+
     try {
+      // Delete related records first
+      await supabase
+        .from("reports")
+        .delete()
+        .eq("reported_account_id", accountId);
+      await supabase.from("reviews").delete().eq("account_id", accountId);
+      await supabase.from("disputes").delete().eq("order_id", accountId);
+
+      // Delete orders and related
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("account_id", accountId);
+      if (orders && orders.length > 0) {
+        const orderIds = orders.map((o) => o.id);
+        await supabase.from("transactions").delete().in("order_id", orderIds);
+        await supabase.from("disputes").delete().in("order_id", orderIds);
+        await supabase.from("orders").delete().in("id", orderIds);
+      }
+
+      await supabase.from("wishlist").delete().eq("account_id", accountId);
+      await supabase
+        .from("account_images")
+        .delete()
+        .eq("account_id", accountId);
+
+      // Finally delete the account
       const { error } = await supabase
         .from("accounts")
         .delete()
         .eq("id", accountId);
-      if (error) throw error;
-      toast.success("Account deleted");
+
+      if (error) {
+        toast.error("Failed to delete: " + error.message);
+        return;
+      }
+
+      toast.success("Account deleted permanently");
       get().fetchAllAccounts();
       get().fetchStats();
     } catch (error) {
-      toast.error("Failed to delete account");
+      toast.error("Failed to delete account: " + error.message);
     }
   },
 

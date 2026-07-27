@@ -32,6 +32,7 @@ export default function SellAccount() {
     loadDraft,
     submitListing,
     resetForm,
+    formData,
   } = useSellAccountStore();
 
   useEffect(() => {
@@ -143,7 +144,7 @@ export default function SellAccount() {
                 <Button
                   onClick={nextStep}
                   variant="primary"
-                  disabled={error ? true : false}
+                  disabled={currentStep === 3 && formData.images.length < 5}
                 >
                   Next
                   <HiOutlineChevronRight className="w-4 h-4" />
