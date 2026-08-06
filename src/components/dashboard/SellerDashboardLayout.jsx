@@ -15,6 +15,7 @@ import {
   HiOutlineMenu,
   HiOutlineX,
   HiOutlineLogout,
+  HiOutlineCreditCard,
   HiOutlineChartBar,
 } from "react-icons/hi";
 import useAuthStore from "../../stores/useAuthStore";
@@ -51,6 +52,11 @@ const navItems = [
 
   { icon: HiOutlineUser, label: "Profile", path: "/seller-dashboard/profile" },
   { icon: HiOutlineCog, label: "Settings", path: "/seller-dashboard/settings" },
+  {
+    icon: HiOutlineCreditCard,
+    label: "Payment Settings",
+    path: "/seller-dashboard/payment-settings",
+  },
 ];
 
 export default function SellerDashboardLayout() {
@@ -175,13 +181,14 @@ export default function SellerDashboardLayout() {
             </Link>
             <Link
               to="/sell"
-              className="text-sm text-brand-gold hover:text-brand-gold-light transition-colors"
+              className="text-sm text-brand-purple hover:text-brand-gold transition-colors"
             >
               + New Listing
             </Link>
+
             <Link
               to="/seller-dashboard/verification"
-              className="text-sm text-brand-gold hover:text-brand-gold-light transition-colors"
+              className="text-sm text-brand-purple hover:text-brand-gold transition-colors"
             >
               Verify Account
             </Link>

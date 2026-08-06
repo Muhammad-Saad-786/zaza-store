@@ -318,8 +318,8 @@ export default function SellerProfile() {
                         {listing.rank}
                       </p>
                       <div className="flex items-center justify-between mt-2">
-                        <p className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-amber-400">
-                          ${listing.price?.toLocaleString()}
+                        <p className="text-lg font-bold text-white">
+                          {listing.price?.toLocaleString()} Rs
                         </p>
                         {listing.featured && (
                           <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-full">

@@ -642,7 +642,7 @@ export default function AccountDetail() {
                             {related.rank}
                           </p>
                           <p className="text-lg font-bold text-gradient-gold mt-2">
-                            ${related.price}
+                            {related.price} Rs
                           </p>
                         </div>
                       </GlassCard>

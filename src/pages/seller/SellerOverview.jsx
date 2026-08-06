@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -8,7 +8,11 @@ import {
   HiOutlineClock,
   HiOutlinePlus,
   HiOutlineArrowRight,
+  HiOutlineCreditCard,
+  HiOutlineExclamation,
 } from "react-icons/hi";
+import { supabase } from "../../lib/supabase";
+import useAuthStore from "../../stores/useAuthStore";
 import useSellerDashboardStore from "../../stores/useSellerDashboardStore";
 import GlassCard from "../../components/ui/GlassCard";
 import Button from "../../components/ui/Button";
@@ -42,6 +46,7 @@ const statCards = [
 ];
 
 export default function SellerOverview() {
+  const { user } = useAuthStore();
   const {
     stats,
     fetchStats,
@@ -51,11 +56,39 @@ export default function SellerOverview() {
     fetchSellerOrders,
   } = useSellerDashboardStore();
 
+  const [hasPaymentDetails, setHasPaymentDetails] = useState(false);
+
   useEffect(() => {
     fetchStats();
     fetchListings();
     fetchSellerOrders();
+    checkPaymentDetails();
   }, []);
+
+  const checkPaymentDetails = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select(
+        "easypaisa_number, jazzcash_number, bank_account, paypal_email, binance_usdt",
+      )
+      .eq("id", user.id)
+      .single();
+
+    if (data) {
+      const hasAny =
+        data.easypaisa_number ||
+        data.jazzcash_number ||
+        data.bank_account ||
+        data.paypal_email ||
+        data.binance_usdt;
+      setHasPaymentDetails(!!hasAny);
+    }
+  };
+
+  // Count actual pending orders (status = pending)
+  const pendingCount =
+    sellerOrders?.filter((o) => o.status === "pending").length || 0;
 
   return (
     <div className="space-y-8">
@@ -64,12 +97,43 @@ export default function SellerOverview() {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 className="text-2xl font-display font-extrabold text-white">
-          Seller Dashboard
+          Seller Dashboard 👋
         </h1>
         <p className="text-white/40 mt-1">
           Manage your listings and track your earnings.
         </p>
       </motion.div>
+
+      {/* Payment Settings Warning */}
+      {!hasPaymentDetails && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                <HiOutlineExclamation className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-yellow-400 font-medium">
+                  Set up your payment details
+                </p>
+                <p className="text-yellow-400/60 text-sm">
+                  Buyers need your payment info to complete purchases. Add at
+                  least one payment method.
+                </p>
+              </div>
+            </div>
+            <Link to="/seller-dashboard/payment-settings">
+              <Button variant="gold" size="sm">
+                <HiOutlineCreditCard className="w-4 h-4" />
+                Set Up Now
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -84,7 +148,9 @@ export default function SellerOverview() {
               <stat.icon className={`w-8 h-8 ${stat.color} mb-3`} />
               <div className="text-3xl font-extrabold text-white">
                 {stat.isCurrency ? "$" : ""}
-                {stats[stat.key]?.toLocaleString() || 0}
+                {stat.key === "pendingOrders"
+                  ? pendingCount.toLocaleString()
+                  : stats[stat.key]?.toLocaleString() || 0}
               </div>
               <div className="text-sm text-white/40 mt-1">{stat.label}</div>
             </GlassCard>
@@ -105,6 +171,23 @@ export default function SellerOverview() {
           <Link to="/seller-dashboard/listings">
             <Button variant="ghost" size="sm">
               Manage Listings
+            </Button>
+          </Link>
+          <Link to="/seller-dashboard/orders">
+            <Button variant="ghost" size="sm">
+              <HiOutlineShoppingBag className="w-4 h-4" />
+              View Orders
+              {pendingCount > 0 && (
+                <span className="ml-1 bg-orange-500 text-white text-xs rounded-full px-2 py-0.5">
+                  {pendingCount}
+                </span>
+              )}
+            </Button>
+          </Link>
+          <Link to="/seller-dashboard/payment-settings">
+            <Button variant="ghost" size="sm">
+              <HiOutlineCreditCard className="w-4 h-4" />
+              Payment Settings
             </Button>
           </Link>
         </div>
@@ -169,6 +252,33 @@ export default function SellerOverview() {
             ))}
           </div>
         </GlassCard>
+      )}
+
+      {/* Pending Orders Alert */}
+      {pendingCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Link to="/seller-dashboard/orders">
+            <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-center justify-between hover:bg-orange-500/20 transition-all cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
+                  <HiOutlineClock className="w-5 h-5 text-orange-400" />
+                </div>
+                <div>
+                  <p className="text-orange-400 font-medium">
+                    {pendingCount} Pending Order{pendingCount !== 1 ? "s" : ""}
+                  </p>
+                  <p className="text-orange-400/60 text-sm">
+                    Review and accept orders from buyers
+                  </p>
+                </div>
+              </div>
+              <HiOutlineArrowRight className="w-5 h-5 text-orange-400" />
+            </div>
+          </Link>
+        </motion.div>
       )}
     </div>
   );

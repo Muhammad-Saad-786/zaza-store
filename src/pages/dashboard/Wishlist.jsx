@@ -88,7 +88,7 @@ export default function Wishlist() {
                       {item.account?.rank}
                     </span>
                     <span className="text-lg font-bold text-gradient-gold">
-                      ${item.account?.price?.toLocaleString()}
+                      {item.account?.price?.toLocaleString()} Rs
                     </span>
                   </div>
 

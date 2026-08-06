@@ -6,6 +6,9 @@ import useAuthStore from "../../stores/useAuthStore";
 import GlassCard from "../../components/ui/GlassCard";
 import Spinner from "../../components/ui/Spinner";
 import toast from "react-hot-toast";
+import useEscrowStore from "../../stores/useEscrowStore";
+import EscrowStatus from "../../components/payment/EscrowStatus";
+import usePaymentStore from "../../stores/usePaymentStore";
 import {
   HiOutlineClock,
   HiOutlineCheckCircle,
@@ -26,6 +29,9 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuthStore();
+  const { openPaymentModal } = usePaymentStore();
+  // Escrow status
+  const { submitPayment, confirmReceipt, fileDispute } = useEscrowStore();
 
   // Review modal
   const [reviewModal, setReviewModal] = useState(null);
@@ -300,6 +306,7 @@ export default function Orders() {
                     </p>
 
                     {/* Status Box */}
+                    {/* Status Box */}
                     <div
                       className={`mt-3 p-3 rounded-xl ${
                         order.status === "completed"
@@ -309,6 +316,7 @@ export default function Orders() {
                             : "bg-yellow-500/10 border border-yellow-500/20"
                       }`}
                     >
+                      {/* Pending */}
                       {order.status === "pending" && (
                         <>
                           <p className="text-sm font-medium text-yellow-400 flex items-center gap-1">
@@ -320,32 +328,162 @@ export default function Orders() {
                           </p>
                         </>
                       )}
+
+                      {/* Completed - Now shows escrow status */}
                       {order.status === "completed" && (
                         <>
-                          <p className="text-sm font-medium text-green-400 flex items-center gap-1">
-                            <HiOutlineCheckCircle className="w-4 h-4" /> Order
-                            completed! Account is yours!
-                          </p>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <button
-                              onClick={() => setReviewModal(order)}
-                              className="px-4 py-2 bg-amber-500/20 text-amber-400 rounded-xl text-sm hover:bg-amber-500/30 flex items-center gap-1"
-                            >
-                              <HiOutlineStar className="w-4 h-4" /> Write a
-                              Review
-                            </button>
-                            <button
-                              onClick={() => {
-                                setDisputeOrder(order);
-                                setShowDisputeModal(true);
-                              }}
-                              className="px-4 py-2 bg-red-500/20 text-red-400 rounded-xl text-sm hover:bg-red-500/30 flex items-center gap-1"
-                            >
-                              🚨 Report Issue
-                            </button>
-                          </div>
+                          {/* Escrow: Awaiting Payment */}
+                          {order.escrow_status === "awaiting_payment" && (
+                            <>
+                              <p className="text-sm font-medium text-yellow-400 flex items-center gap-1">
+                                <HiOutlineCheckCircle className="w-4 h-4" />{" "}
+                                Order accepted!
+                              </p>
+                              <p className="text-yellow-400/60 text-xs mt-1">
+                                Complete payment to secure your account. Payment
+                                is held in escrow.
+                              </p>
+                              <button
+                                onClick={() => openPaymentModal(order)}
+                                className="px-4 py-2 bg-green-500/20 text-green-400 rounded-xl text-sm hover:bg-green-500/30 flex items-center gap-1 mt-2"
+                              >
+                                💳 Pay Now (Escrow Protected)
+                              </button>
+                            </>
+                          )}
+
+                          {/* Escrow: Payment Submitted */}
+                          {order.escrow_status === "payment_submitted" && (
+                            <>
+                              <p className="text-sm font-medium text-blue-400 flex items-center gap-1">
+                                <HiOutlineCheckCircle className="w-4 h-4" />{" "}
+                                Payment submitted!
+                              </p>
+                              <p className="text-blue-400/60 text-xs mt-1">
+                                Waiting for seller to verify your payment and
+                                deliver the account.
+                              </p>
+                            </>
+                          )}
+
+                          {/* Escrow: Payment Verified */}
+                          {order.escrow_status === "payment_verified" && (
+                            <>
+                              <p className="text-sm font-medium text-green-400 flex items-center gap-1">
+                                <HiOutlineCheckCircle className="w-4 h-4" />{" "}
+                                Payment verified!
+                              </p>
+                              <p className="text-green-400/60 text-xs mt-1">
+                                Seller is preparing to deliver your account.
+                                You'll be notified once delivered.
+                              </p>
+                            </>
+                          )}
+
+                          {/* Escrow: Delivered */}
+                          {order.escrow_status === "delivered" && (
+                            <>
+                              <p className="text-sm font-medium text-purple-400 flex items-center gap-1">
+                                <HiOutlineCheckCircle className="w-4 h-4" />{" "}
+                                Account delivered!
+                              </p>
+                              <p className="text-purple-400/60 text-xs mt-1">
+                                Verify the account within 48 hours. Payment will
+                                be released to seller after confirmation.
+                              </p>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                <button
+                                  onClick={() => confirmReceipt(order.id)}
+                                  className="px-4 py-2 bg-amber-500/20 text-amber-400 rounded-xl text-sm hover:bg-amber-500/30 flex items-center gap-1"
+                                >
+                                  Confirm & Release Payment
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setDisputeOrder(order);
+                                    setShowDisputeModal(true);
+                                  }}
+                                  className="px-4 py-2 bg-red-500/20 text-red-400 rounded-xl text-sm hover:bg-red-500/30 flex items-center gap-1"
+                                >
+                                  🚨 Report Issue
+                                </button>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Escrow: Released */}
+                          {order.escrow_status === "released" && (
+                            <>
+                              <p className="text-sm font-medium text-green-400 flex items-center gap-1">
+                                <HiOutlineCheckCircle className="w-4 h-4" />{" "}
+                                Payment released!
+                              </p>
+                              <p className="text-green-400/60 text-xs mt-1">
+                                Enjoy your account! Payment has been released to
+                                the seller.
+                              </p>
+                              <div className="mt-2">
+                                <button
+                                  onClick={() => setReviewModal(order)}
+                                  className="px-4 py-2 bg-amber-500/20 text-amber-400 rounded-xl text-sm hover:bg-amber-500/30 flex items-center gap-1"
+                                >
+                                  <HiOutlineStar className="w-4 h-4" /> Write a
+                                  Review
+                                </button>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Escrow: Disputed */}
+                          {order.escrow_status === "disputed" && (
+                            <>
+                              <p className="text-sm font-medium text-red-400 flex items-center gap-1">
+                                <HiOutlineXCircle className="w-4 h-4" /> Dispute
+                                filed
+                              </p>
+                              <p className="text-red-400/60 text-xs mt-1">
+                                Funds are frozen. Admin is reviewing your case.
+                                You'll be notified of the decision.
+                              </p>
+                            </>
+                          )}
+
+                          {/* Escrow: Refunded */}
+                          {order.escrow_status === "refunded" && (
+                            <>
+                              <p className="text-sm font-medium text-blue-400 flex items-center gap-1">
+                                <HiOutlineCheckCircle className="w-4 h-4" />{" "}
+                                Refunded
+                              </p>
+                              <p className="text-blue-400/60 text-xs mt-1">
+                                Your payment has been refunded. The funds will
+                                return to your account within 3-5 days.
+                              </p>
+                            </>
+                          )}
+
+                          {/* Fallback for old orders without escrow_status */}
+                          {!order.escrow_status && (
+                            <>
+                              <p className="text-sm font-medium text-green-400 flex items-center gap-1">
+                                <HiOutlineCheckCircle className="w-4 h-4" />{" "}
+                                Order completed! Account is yours!
+                              </p>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                <button
+                                  onClick={() => setReviewModal(order)}
+                                  className="px-4 py-2 bg-amber-500/20 text-amber-400 rounded-xl text-sm hover:bg-amber-500/30 flex items-center gap-1"
+                                >
+                                  <HiOutlineStar className="w-4 h-4" /> Write a
+                                  Review
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </>
                       )}
+
+                      {/* Cancelled */}
                       {order.status === "cancelled" && (
                         <p className="text-sm font-medium text-red-400 flex items-center gap-1">
                           <HiOutlineXCircle className="w-4 h-4" /> Order
@@ -353,6 +491,50 @@ export default function Orders() {
                         </p>
                       )}
                     </div>
+                    {/* Escrow Progress Tracker */}
+                    {order.escrow_status && (
+                      <div className="mt-3 pt-3 border-t border-white/5">
+                        <div className="flex items-center gap-2 text-xs">
+                          {[
+                            "awaiting_payment",
+                            "payment_submitted",
+                            "payment_verified",
+                            "delivered",
+                            "released",
+                          ].map((step, i) => {
+                            const stepIndex = [
+                              "awaiting_payment",
+                              "payment_submitted",
+                              "payment_verified",
+                              "delivered",
+                              "released",
+                            ].indexOf(order.escrow_status);
+                            const isComplete =
+                              i <= stepIndex &&
+                              order.escrow_status !== "disputed" &&
+                              order.escrow_status !== "refunded";
+                            return (
+                              <div
+                                key={step}
+                                className="flex items-center gap-1"
+                              >
+                                <div
+                                  className={`w-2 h-2 rounded-full ${isComplete ? "bg-green-400" : "bg-white/10"}`}
+                                />
+                                {i < 4 && (
+                                  <div
+                                    className={`w-4 h-px ${i < stepIndex ? "bg-green-400" : "bg-white/10"}`}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <p className="text-xs text-white/20 mt-1 capitalize">
+                          Escrow: {order.escrow_status?.replace(/_/g, " ")}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

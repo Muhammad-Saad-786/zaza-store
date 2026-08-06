@@ -48,6 +48,8 @@ import Refund from "./pages/Refund";
 import Cookies from "./pages/Cookies";
 import useCookieConsent from "./stores/useCookieConsent";
 import CookieBanner from "./components/ui/CookieBanner";
+import PaymentModal from "./components/payment/PaymentModal";
+import PaymentSettings from "./pages/seller/PaymentSettings";
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -127,6 +129,8 @@ function App() {
       />
       <CookieBanner />
       <BuyConfirmModal />
+      <PaymentModal />
+
       <Routes>
         <Route element={<Layout />}>
           {/* Public Routes */}
@@ -207,6 +211,7 @@ function App() {
             <Route path="verification" element={<Verification />} />
             <Route path="profile" element={<ProfileSettings />} />
             <Route path="settings" element={<ProfileSettings />} />
+            <Route path="payment-settings" element={<PaymentSettings />} />
           </Route>
 
           <Route

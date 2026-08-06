@@ -5,8 +5,18 @@ import useAuthStore from "../../stores/useAuthStore";
 import GlassCard from "../../components/ui/GlassCard";
 import Spinner from "../../components/ui/Spinner";
 import toast from "react-hot-toast";
-
-import { HiOutlineCheckCircle, HiOutlineXCircle } from "react-icons/hi";
+import useEscrowStore from "../../stores/useEscrowStore";
+import { Link } from "react-router-dom";
+import { getPaymentProofUrl } from "../../lib/storage";
+import {
+  HiOutlineCheckCircle,
+  HiOutlineXCircle,
+  HiOutlineExclamationCircle,
+  HiOutlineClock,
+  HiOutlineCash,
+  HiOutlineTruck,
+  HiOutlineShieldCheck,
+} from "react-icons/hi";
 
 const statusColors = {
   pending: "badge-gold",
@@ -18,13 +28,14 @@ export default function SellerOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
+  const { verifyPayment, markDelivered } = useEscrowStore();
+  const [proofUrl, setProofUrl] = useState("");
 
   const fetchOrders = async () => {
     if (!user) return;
     setLoading(true);
 
     try {
-      // Get orders
       const { data: ordersData, error } = await supabase
         .from("orders")
         .select("*")
@@ -33,7 +44,6 @@ export default function SellerOrders() {
 
       if (error) throw error;
 
-      // Get details
       const ordersWithDetails = await Promise.all(
         (ordersData || []).map(async (order) => {
           const { data: account } = await supabase
@@ -69,132 +79,62 @@ export default function SellerOrders() {
   }, [user]);
 
   const handleAcceptOrder = async (order) => {
-    const toastId = toast.loading("Processing order...");
-
     try {
-      // 1. Update this order to completed
+      console.log("Accepting order:", order.id);
+
       const { error: orderError } = await supabase
         .from("orders")
-        .update({ status: "completed", updated_at: new Date().toISOString() })
+        .update({
+          status: "completed",
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", order.id);
 
       if (orderError) {
-        toast.error("Failed to update order: " + orderError.message, {
-          id: toastId,
-        });
+        console.error("Order update error:", orderError);
+        toast.error("Failed to accept order: " + orderError.message);
         return;
       }
 
-      // 2. Cancel ALL OTHER pending orders for this account
-      const { data: otherOrders, error: otherError } = await supabase
-        .from("orders")
-        .update({
-          status: "cancelled",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("account_id", order.account_id)
-        .eq("status", "pending")
-        .neq("id", order.id)
-        .select("buyer_id");
+      console.log("Order accepted, now awaiting payment");
 
-      if (otherError) {
-        console.error("Failed to cancel other orders:", otherError);
-      } else {
-        console.log("Cancelled other pending orders:", otherOrders);
-
-        // Notify other buyers that their orders were cancelled
-        if (otherOrders && otherOrders.length > 0) {
-          for (const otherOrder of otherOrders) {
-            await supabase.from("notifications").insert([
-              {
-                user_id: otherOrder.buyer_id,
-                title: "Order Cancelled",
-                message: `Your order for "${order.account?.title || "account"}" was cancelled because another buyer completed the purchase first.`,
-                type: "order",
-                link: "/dashboard/orders",
-              },
-            ]);
-          }
-        }
-      }
-
-      // 3. Mark account as sold
-      const { error: accountError } = await supabase
-        .from("accounts")
-        .update({ status: "sold", updated_at: new Date().toISOString() })
-        .eq("id", order.account_id);
-
-      if (accountError) {
-        console.error("Account update error:", accountError);
-      }
-
-      // 4. Create transaction
-      const { error: txError } = await supabase.from("transactions").insert([
-        {
-          seller_id: user.id,
-          order_id: order.id,
-          amount: order.amount,
-          type: "sale",
-          status: "completed",
-          description: `Sale of ${order.account?.title || "account"}`,
-        },
-      ]);
-
-      if (txError) {
-        console.error("Transaction error:", txError);
-      }
-
-      // 5. Update seller stats
-      try {
-        await supabase.rpc("increment_seller_sales", { seller_id: user.id });
-      } catch (rpcError) {
-        console.error("RPC error:", rpcError);
-      }
-
-      // 6. Notify the winning buyer
       await supabase.from("notifications").insert([
         {
           user_id: order.buyer_id,
-          title: "Order Completed! 🎉",
-          message: `Your order for "${order.account?.title || "account"}" has been completed! The account is now yours.`,
+          title: "Order Accepted! 🎉",
+          message:
+            "Seller accepted your order. Please complete payment to secure your account.",
           type: "order",
           link: "/dashboard/orders",
         },
       ]);
 
-      toast.success("Order completed! Other pending orders cancelled.", {
-        id: toastId,
-      });
+      toast.success("Order accepted! Buyer will now submit payment.");
       fetchOrders();
     } catch (error) {
       console.error("Accept error:", error);
-      toast.error("Failed: " + error.message, { id: toastId });
+      toast.error("Failed to accept order");
     }
   };
 
   const handleRejectOrder = async (order) => {
-    const toastId = toast.loading("Rejecting order...");
-
     try {
-      // Update order to cancelled
       const { error: orderError } = await supabase
         .from("orders")
         .update({ status: "cancelled", updated_at: new Date().toISOString() })
         .eq("id", order.id);
 
       if (orderError) {
-        toast.error("Failed: " + orderError.message, { id: toastId });
+        toast.error("Failed: " + orderError.message);
         return;
       }
 
-      // Check if there are other pending orders for this account
       const { count: pendingCount } = await supabase
         .from("orders")
         .select("*", { count: "exact" })
         .eq("account_id", order.account_id)
         .eq("status", "pending");
 
-      // Only reactivate if no other pending orders
       if (pendingCount === 0) {
         await supabase
           .from("accounts")
@@ -202,7 +142,6 @@ export default function SellerOrders() {
           .eq("id", order.account_id);
       }
 
-      // Notify buyer
       await supabase.from("notifications").insert([
         {
           user_id: order.buyer_id,
@@ -213,10 +152,10 @@ export default function SellerOrders() {
         },
       ]);
 
-      toast.success("Order rejected", { id: toastId });
+      toast.success("Order rejected");
       fetchOrders();
     } catch (error) {
-      toast.error("Failed: " + error.message, { id: toastId });
+      toast.error("Failed: " + error.message);
     }
   };
 
@@ -257,11 +196,28 @@ export default function SellerOrders() {
             <GlassCard key={order.id} className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium border capitalize ${statusColors[order.status] || "badge-purple"}`}
-                  >
-                    {order.status}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium border capitalize ${statusColors[order.status] || "badge-purple"}`}
+                    >
+                      {order.status}
+                    </span>
+                    {order.escrow_status && (
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          order.escrow_status === "released"
+                            ? "bg-green-500/20 text-green-400"
+                            : order.escrow_status === "disputed"
+                              ? "bg-red-500/20 text-red-400"
+                              : order.escrow_status === "refunded"
+                                ? "bg-blue-500/20 text-blue-400"
+                                : "bg-yellow-500/20 text-yellow-400"
+                        }`}
+                      >
+                        {order.escrow_status?.replace(/_/g, " ")}
+                      </span>
+                    )}
+                  </div>
 
                   <h3 className="font-semibold text-white text-lg mt-2">
                     {order.account?.title}
@@ -273,6 +229,7 @@ export default function SellerOrders() {
                     ${order.amount?.toLocaleString()}
                   </p>
 
+                  {/* Pending */}
                   {order.status === "pending" && (
                     <div className="flex gap-2 mt-4">
                       <button
@@ -290,19 +247,263 @@ export default function SellerOrders() {
                     </div>
                   )}
 
+                  {/* Completed - Escrow */}
                   {order.status === "completed" && (
-                    <p className="text-green-400 text-sm mt-2">
-                      {
-                        <HiOutlineCheckCircle className="inline-block mr-1 text-xl" />
-                      }{" "}
-                      Completed
-                    </p>
+                    <div className="mt-2 space-y-2">
+                      {/* Awaiting Payment */}
+                      {order.escrow_status === "awaiting_payment" && (
+                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                          <p className="text-yellow-400 text-sm font-medium">
+                            <HiOutlineClock className="inline-block mr-1" />{" "}
+                            Awaiting Buyer Payment
+                          </p>
+                          <p className="text-yellow-400/60 text-xs mt-1">
+                            Order accepted. Waiting for buyer to submit payment
+                            proof.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Payment Submitted */}
+                      {order.escrow_status === "payment_submitted" && (
+                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                          <p className="text-blue-400 text-sm font-medium">
+                            <HiOutlineCheckCircle className="inline-block mr-1" />{" "}
+                            Payment Submitted!
+                          </p>
+                          <p className="text-blue-400/60 text-xs mt-1">
+                            Buyer has uploaded payment proof. Verify the payment
+                            and deliver the account.
+                          </p>
+                          {order.payment_proof && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const url = await getPaymentProofUrl(
+                                    order.payment_proof,
+                                  );
+                                  if (url) {
+                                    window.open(url, "_blank");
+                                  } else {
+                                    toast.error(
+                                      "Unable to load payment proof. Please try again.",
+                                    );
+                                  }
+                                } catch (err) {
+                                  toast.error("Failed to load payment proof");
+                                }
+                              }}
+                              className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-xl text-sm hover:bg-blue-500/30 flex items-center gap-1 mt-2"
+                            >
+                              📄 View Payment Proof
+                            </button>
+                          )}
+                          {order.payment_method && (
+                            <p className="text-white/30 text-xs mt-2">
+                              Payment via:{" "}
+                              <span className="text-white/50 capitalize">
+                                {order.payment_method?.replace(/_/g, " ")}
+                              </span>
+                            </p>
+                          )}
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() => verifyPayment(order.id)}
+                              className="px-4 py-2 bg-green-500/20 text-green-400 rounded-xl text-sm hover:bg-green-500/30 flex items-center gap-1"
+                            >
+                              Verify Payment Received
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (
+                                  confirm(
+                                    "Reject this payment? Buyer will be notified to try again.",
+                                  )
+                                ) {
+                                  await supabase
+                                    .from("orders")
+                                    .update({
+                                      escrow_status: "awaiting_payment",
+                                    })
+                                    .eq("id", order.id);
+                                  await supabase.from("notifications").insert([
+                                    {
+                                      user_id: order.buyer_id,
+                                      title: "Payment Not Verified",
+                                      message:
+                                        "Seller could not verify your payment. Please check and try again.",
+                                      type: "escrow",
+                                      link: "/dashboard/orders",
+                                    },
+                                  ]);
+                                  toast.success(
+                                    "Payment rejected. Buyer notified.",
+                                  );
+                                  fetchOrders();
+                                }
+                              }}
+                              className="px-4 py-2 bg-red-500/20 text-red-400 rounded-xl text-sm hover:bg-red-500/30 flex items-center gap-1"
+                            >
+                              ✕ Reject Payment
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {/* Payment Awaiting */}
+                      {order.escrow_status === "awaiting_payment" && (
+                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                          <p className="text-yellow-400 text-sm font-medium">
+                            <HiOutlineClock className="inline-block mr-1" />{" "}
+                            Awaiting Buyer Payment
+                          </p>
+                          <p className="text-yellow-400/60 text-xs mt-1">
+                            Waiting for buyer to submit payment proof. Make sure
+                            your payment details are set up.
+                          </p>
+                          <Link
+                            to="/seller-dashboard/payment-settings"
+                            className="inline-block mt-2"
+                          >
+                            <button className="px-3 py-1.5 bg-yellow-500/20 text-yellow-400 rounded-lg text-xs hover:bg-yellow-500/30">
+                              ⚙️ Payment Settings
+                            </button>
+                          </Link>
+                        </div>
+                      )}
+                      {/* Payment Verified */}
+                      {order.escrow_status === "payment_verified" && (
+                        <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                          <p className="text-purple-400 text-sm font-medium">
+                            <HiOutlineCheckCircle className="inline-block mr-1" />{" "}
+                            Payment Verified!
+                          </p>
+                          <p className="text-purple-400/60 text-xs mt-1">
+                            Payment confirmed. Deliver the account credentials
+                            to the buyer now.
+                          </p>
+                          <button
+                            onClick={() => markDelivered(order.id)}
+                            className="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-xl text-sm hover:bg-purple-500/30 flex items-center gap-1 mt-2"
+                          >
+                            <HiOutlineTruck className="w-4 h-4" /> Mark as
+                            Delivered
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Delivered */}
+                      {order.escrow_status === "delivered" && (
+                        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                          <p className="text-amber-400 text-sm font-medium">
+                            <HiOutlineCheckCircle className="inline-block mr-1" />{" "}
+                            Account Delivered!
+                          </p>
+                          <p className="text-amber-400/60 text-xs mt-1">
+                            Waiting for buyer to confirm receipt. Payment will
+                            be released within 48 hours.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Released */}
+                      {order.escrow_status === "released" && (
+                        <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl">
+                          <p className="text-green-400 text-sm font-medium">
+                            <HiOutlineCash className="inline-block mr-1" />{" "}
+                            Payment Released! 🎉
+                          </p>
+                          <p className="text-green-400/60 text-xs mt-1">
+                            Payment has been released to your account. Funds are
+                            now available.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Disputed */}
+                      {order.escrow_status === "disputed" && (
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                          <p className="text-red-400 text-sm font-medium">
+                            <HiOutlineExclamationCircle className="inline-block mr-1" />{" "}
+                            Dispute Filed
+                          </p>
+                          <p className="text-red-400/60 text-xs mt-1">
+                            Funds are frozen. Admin is reviewing this case.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Refunded */}
+                      {order.escrow_status === "refunded" && (
+                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                          <p className="text-blue-400 text-sm font-medium">
+                            <HiOutlineCheckCircle className="inline-block mr-1" />{" "}
+                            Refunded to Buyer
+                          </p>
+                          <p className="text-blue-400/60 text-xs mt-1">
+                            Payment has been refunded to the buyer.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Fallback */}
+                      {!order.escrow_status && (
+                        <p className="text-green-400 text-sm">
+                          <HiOutlineCheckCircle className="inline-block mr-1" />{" "}
+                          Completed
+                        </p>
+                      )}
+                    </div>
                   )}
+
+                  {/* Cancelled */}
                   {order.status === "cancelled" && (
                     <p className="text-red-400 text-sm mt-2">
-                      <HiOutlineXCircle className="inline-block mr-1 text-xl" />{" "}
+                      <HiOutlineXCircle className="inline-block mr-1" />{" "}
                       Cancelled
                     </p>
+                  )}
+
+                  {/* Escrow Progress Dots */}
+                  {order.escrow_status && (
+                    <div className="mt-3 pt-3 border-t border-white/5">
+                      <div className="flex items-center gap-2 text-xs">
+                        {[
+                          "awaiting_payment",
+                          "payment_submitted",
+                          "payment_verified",
+                          "delivered",
+                          "released",
+                        ].map((step, i) => {
+                          const stepIndex = [
+                            "awaiting_payment",
+                            "payment_submitted",
+                            "payment_verified",
+                            "delivered",
+                            "released",
+                          ].indexOf(order.escrow_status);
+                          const isComplete =
+                            i <= stepIndex &&
+                            order.escrow_status !== "disputed" &&
+                            order.escrow_status !== "refunded";
+                          return (
+                            <div key={step} className="flex items-center gap-1">
+                              <div
+                                className={`w-2 h-2 rounded-full ${isComplete ? "bg-green-400" : "bg-white/10"}`}
+                              />
+                              {i < 4 && (
+                                <div
+                                  className={`w-4 h-px ${i < stepIndex ? "bg-green-400" : "bg-white/10"}`}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-white/20 mt-1 capitalize">
+                        <HiOutlineShieldCheck className="inline-block w-3 h-3 mr-1" />
+                        Escrow: {order.escrow_status?.replace(/_/g, " ")}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
