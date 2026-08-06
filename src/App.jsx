@@ -42,6 +42,12 @@ import Reports from "./pages/admin/Reports";
 import Disputes from "./pages/admin/Disputes";
 import PlayerChecker from "./components/mlbb/PlayerChecker";
 import useOnlineStatus from "./stores/useOnlineStatus";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Refund from "./pages/Refund";
+import Cookies from "./pages/Cookies";
+import useCookieConsent from "./stores/useCookieConsent";
+import CookieBanner from "./components/ui/CookieBanner";
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -85,6 +91,7 @@ function App() {
       };
     }
   }, [user]);
+
   useEffect(() => {
     initialize();
   }, [initialize]);
@@ -96,6 +103,13 @@ function App() {
       clearWishlist();
     }
   }, [user]);
+
+  // Cookies
+  const initCookies = useCookieConsent((state) => state.init);
+
+  useEffect(() => {
+    initCookies();
+  }, []);
 
   return (
     <>
@@ -111,6 +125,7 @@ function App() {
           },
         }}
       />
+      <CookieBanner />
       <BuyConfirmModal />
       <Routes>
         <Route element={<Layout />}>
@@ -127,6 +142,10 @@ function App() {
           <Route path="/select-role" element={<SelectRole />} />
           <Route path="/seller/:id" element={<SellerProfile />} />
           <Route path="/player-checker" element={<PlayerChecker />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/refund" element={<Refund />} />
+          <Route path="/cookies" element={<Cookies />} />
 
           <Route
             path="/profile"

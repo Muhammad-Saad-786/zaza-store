@@ -13,10 +13,12 @@ import toast from "react-hot-toast";
 import useAuthStore from "../../stores/useAuthStore";
 import GlassCard from "../../components/ui/GlassCard";
 import Button from "../../components/ui/Button";
+import useCookieConsent from "../../stores/useCookieConsent";
 
 export default function ProfileSettings() {
   const { profile, updateProfile, uploadAvatar } = useAuthStore();
   const [isUploading, setIsUploading] = useState(false);
+  const { consent, resetConsent } = useCookieConsent();
 
   const {
     register,
@@ -254,6 +256,29 @@ export default function ProfileSettings() {
                 <span className="text-sm font-medium">Seller</span>
               </button>
             </div>
+          </GlassCard>
+          <GlassCard className="p-6">
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Cookie Preferences
+            </h2>
+            <p className="text-white/40 text-sm mb-4">
+              Current status:{" "}
+              <span className="text-purple-400 font-medium">
+                {consent === true
+                  ? "All cookies accepted"
+                  : consent === "essential"
+                    ? "Essential only"
+                    : consent === false
+                      ? "Declined"
+                      : "Not set"}
+              </span>
+            </p>
+            <button
+              onClick={resetConsent}
+              className="text-sm text-purple-400 hover:text-purple-300"
+            >
+              Change cookie settings
+            </button>
           </GlassCard>
 
           {/* Save Button */}
