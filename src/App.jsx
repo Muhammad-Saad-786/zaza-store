@@ -50,6 +50,7 @@ import useCookieConsent from "./stores/useCookieConsent";
 import CookieBanner from "./components/ui/CookieBanner";
 import PaymentModal from "./components/payment/PaymentModal";
 import PaymentSettings from "./pages/seller/PaymentSettings";
+import Notifications from "./pages/dashboard/Notifications";
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -189,7 +190,7 @@ function App() {
             <Route path="orders" element={<Orders />} />
             <Route path="wishlist" element={<Wishlist />} />
             <Route path="messages" element={<Messages />} />
-            <Route path="notifications" element={<Messages />} />
+            <Route path="notifications" element={<Notifications />} />
             <Route path="reviews" element={<Messages />} />
             <Route path="recent" element={<Messages />} />
             <Route path="profile" element={<ProfileSettings />} />
@@ -212,6 +213,7 @@ function App() {
             <Route path="profile" element={<ProfileSettings />} />
             <Route path="settings" element={<ProfileSettings />} />
             <Route path="payment-settings" element={<PaymentSettings />} />
+            <Route path="notifications" element={<Notifications />} />
           </Route>
 
           <Route

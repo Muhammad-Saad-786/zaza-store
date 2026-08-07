@@ -15,6 +15,7 @@ import {
   HiOutlineLogout,
   HiOutlineCog,
   HiOutlineShieldCheck,
+  HiOutlineBell,
 } from "react-icons/hi";
 import { FiChevronDown } from "react-icons/fi";
 import Logo from "../shared/Logo";
@@ -53,6 +54,7 @@ export default function Navbar() {
   const { count: wishlistCount } = useWishlistStore();
   const [ordersCount, setOrdersCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   // Real-time message subscription
   useEffect(() => {
@@ -198,6 +200,46 @@ export default function Navbar() {
     setUserMenuOpen(false);
     setIsMobileOpen(false);
   };
+  // Notificsations
+  const fetchNotificationCount = async () => {
+    const { count } = await supabase
+      .from("notifications")
+      .select("*", { count: "exact" })
+      .eq("user_id", user.id)
+      .eq("read", false);
+
+    setNotificationCount(count || 0);
+  };
+  useEffect(() => {
+    if (!user) {
+      setNotificationCount(0);
+      return;
+    }
+
+    // Fetch initial count
+    fetchNotificationCount();
+
+    // Subscribe to new notifications
+    const channel = supabase
+      .channel("navbar-notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          setNotificationCount((prev) => prev + 1);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   return (
     <>
@@ -343,6 +385,25 @@ export default function Navbar() {
                           className="absolute -top-1 -right-1 w-5 h-5 bg-cyber-neon text-white text-xs rounded-full flex items-center justify-center font-bold"
                         >
                           {unreadMessages}
+                        </motion.span>
+                      )}
+                    </motion.button>
+                  </Link>
+                  {/* Notifications */}
+                  <Link to="/dashboard/notifications">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="relative p-2 text-white/60 hover:text-white transition-colors"
+                    >
+                      <HiOutlineBell className="w-6 h-6" />
+                      {notificationCount > 0 && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold"
+                        >
+                          {notificationCount}
                         </motion.span>
                       )}
                     </motion.button>
