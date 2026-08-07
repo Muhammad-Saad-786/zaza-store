@@ -155,19 +155,72 @@ const useSellerDashboardStore = create((set, get) => ({
 
   // Delete listing
   deleteListing: async (listingId) => {
+    if (
+      !confirm(
+        "Delete this listing permanently? All related data will be deleted. This cannot be undone.",
+      )
+    )
+      return;
+
     try {
+      console.log("Deleting listing:", listingId);
+
+      // Step 1: Delete ALL child records in correct order
+      // 1a. Delete reviews for this account
+      await supabase.from("reviews").delete().eq("account_id", listingId);
+
+      // 1b. Find and delete orders (with their children)
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("account_id", listingId);
+
+      if (orders && orders.length > 0) {
+        const orderIds = orders.map((o) => o.id);
+
+        // Delete disputes
+        await supabase.from("disputes").delete().in("order_id", orderIds);
+        // Delete transactions
+        await supabase.from("transactions").delete().in("order_id", orderIds);
+        // Delete reviews linked to orders
+        await supabase.from("reviews").delete().in("order_id", orderIds);
+        // Finally delete orders
+        await supabase.from("orders").delete().in("id", orderIds);
+      }
+
+      // 1c. Delete remaining related records
+      await supabase
+        .from("account_images")
+        .delete()
+        .eq("account_id", listingId);
+      await supabase.from("wishlist").delete().eq("account_id", listingId);
+      await supabase
+        .from("reports")
+        .delete()
+        .eq("reported_account_id", listingId);
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("link", `/account/${listingId}`);
+
+      // Step 2: NOW delete the account
       const { error } = await supabase
         .from("accounts")
         .delete()
         .eq("id", listingId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Delete error:", error);
+        toast.error("Failed to delete: " + error.message);
+        return;
+      }
 
-      toast.success("Listing deleted");
+      toast.success("Listing deleted permanently");
       get().fetchListings();
       get().fetchStats();
     } catch (error) {
-      toast.error("Failed to delete listing");
+      console.error("Delete error:", error);
+      toast.error("Failed to delete");
     }
   },
 
