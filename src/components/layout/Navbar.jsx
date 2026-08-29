@@ -18,6 +18,10 @@ import {
   HiOutlineShieldCheck,
   HiOutlineBell,
   HiOutlineChevronRight,
+  HiOutlineUsers,
+  HiOutlineTrendingUp,
+  HiOutlineMap,
+  HiOutlineSearch,
 } from "react-icons/hi";
 import { FiChevronDown } from "react-icons/fi";
 import Logo from "../shared/Logo";
@@ -52,25 +56,25 @@ const navLinks = [
       {
         label: "MLBB Heroes",
         href: "/tools/mlbb/heroes",
-        icon: "🎮",
+        icon: HiOutlineUsers,
         description: "Browse all Mobile Legends heroes",
       },
       {
         label: "Hero Rankings",
         href: "/tools/mlbb/rankings",
-        icon: "🏆",
+        icon: HiOutlineTrendingUp,
         description: "View hero tier lists and win rates",
       },
       {
         label: "Hero Positions",
         href: "/tools/mlbb/positions",
-        icon: "📍",
+        icon: HiOutlineMap,
         description: "Filter heroes by role and lane",
       },
       {
         label: "Hero Search",
         href: "/tools/mlbb/hero-search",
-        icon: "🔍",
+        icon: HiOutlineSearch,
         description: "Search for specific hero details",
       },
     ],
@@ -340,37 +344,39 @@ export default function Navbar() {
                   </Link>
 
                   <AnimatePresence>
+                    {/* Update the dropdown render section */}
                     {link.dropdown && activeDropdown === link.label && (
                       <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute top-full left-0 mt-2 w-64 glass-modal p-2"
+                        className="absolute top-full left-0 mt-1 w-64 glass-modal p-2"
                       >
-                        {link.dropdown.map((item) => (
-                          <Link
-                            key={item.label}
-                            to={item.href}
-                            className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 group"
-                          >
-                            {item.icon && (
-                              <span className="text-xl flex-shrink-0">
-                                {item.icon}
-                              </span>
-                            )}
-                            <div>
-                              <p className="font-medium group-hover:text-white transition-colors">
-                                {item.label}
-                              </p>
-                              {item.description && (
-                                <p className="text-xs text-white/40 mt-0.5">
-                                  {item.description}
-                                </p>
+                        {link.dropdown.map((item) => {
+                          const IconComponent = item.icon;
+                          return (
+                            <Link
+                              key={item.label}
+                              to={item.href}
+                              className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 group"
+                            >
+                              {IconComponent && (
+                                <IconComponent className="w-5 h-5 flex-shrink-0 text-white/40 group-hover:text-white transition-colors" />
                               )}
-                            </div>
-                          </Link>
-                        ))}
+                              <div>
+                                <p className="font-medium group-hover:text-white transition-colors">
+                                  {item.label}
+                                </p>
+                                {item.description && (
+                                  <p className="text-xs text-white/40 mt-0.5">
+                                    {item.description}
+                                  </p>
+                                )}
+                              </div>
+                            </Link>
+                          );
+                        })}
                       </motion.div>
                     )}
                   </AnimatePresence>

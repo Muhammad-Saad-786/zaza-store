@@ -1,6 +1,6 @@
 // src/lib/mlbbHeroesApi.js
 const API_BASE_URL = import.meta.env.PROD
-  ? "/api/mlbb"
+  ? "/api"
   : "http://localhost:3001/api/mlbb";
 
 const headers = {

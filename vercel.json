@@ -54,14 +54,9 @@
     }
   ],
   "functions": {
-    "api/mlbb/*.js": {
-      "maxDuration": 10
-    },
-    "api/mlbb/heroes/*.js": {
-      "maxDuration": 10
-    },
-    "api/mlbb/heroes/[identifier]/*.js": {
-      "maxDuration": 10
+    "api/*.js": {
+      "maxDuration": 10,
+      "memory": 1024
     }
   }
 }
