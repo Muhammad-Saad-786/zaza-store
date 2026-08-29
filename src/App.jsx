@@ -51,6 +51,12 @@ import CookieBanner from "./components/ui/CookieBanner";
 import PaymentModal from "./components/payment/PaymentModal";
 import PaymentSettings from "./pages/seller/PaymentSettings";
 import Notifications from "./pages/dashboard/Notifications";
+import HeroesList from "./components/mlbb/HeroesList";
+import HeroDetail from "./components/mlbb/HeroDetail";
+import HeroRankings from "./components/mlbb/HeroRankings";
+import HeroPositions from "./components/mlbb/HeroPositions";
+import HeroSearch from "./components/mlbb/HeroSearch";
+import MLBBProfile from "./components/mlbb/MLBBProfile";
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -147,6 +153,12 @@ function App() {
           <Route path="/select-role" element={<SelectRole />} />
           <Route path="/seller/:id" element={<SellerProfile />} />
           <Route path="/player-checker" element={<PlayerChecker />} />
+          <Route path="/mlbb-profile" element={<MLBBProfile />} />
+          <Route path="/tools/mlbb/heroes" element={<HeroesList />} />
+          <Route path="/tools/mlbb/hero/:heroName" element={<HeroDetail />} />
+          <Route path="/tools/mlbb/rankings" element={<HeroRankings />} />
+          <Route path="/tools/mlbb/positions" element={<HeroPositions />} />
+          <Route path="/tools/mlbb/hero-search" element={<HeroSearch />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/refund" element={<Refund />} />

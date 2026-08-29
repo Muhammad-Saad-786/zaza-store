@@ -10,7 +10,9 @@ import toast from "react-hot-toast";
 import useAuthStore from "../stores/useAuthStore";
 import Button from "../components/ui/Button";
 import Logo from "../components/shared/Logo";
-
+import MLBBLoginModal from "../components/mlbb/MLBBLoginModal";
+import useMLBBAuthStore from "../stores/useMLBBAuthStore";
+import mlbbLogo from "/mobile-legends.png";
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -20,6 +22,12 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signInWithGoogle, user, clearError } = useAuthStore();
+  const [showMLBBLogin, setShowMLBBLogin] = useState(false);
+  const {
+    isLoggedIn: isMLBBLoggedIn,
+    mlbbUser,
+    initializeMLBB,
+  } = useMLBBAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,6 +40,20 @@ export default function Login() {
   } = useForm({
     resolver: zodResolver(loginSchema),
   });
+
+  useEffect(() => {
+    initializeMLBB();
+  }, []);
+
+  useEffect(() => {
+    if (isMLBBLoggedIn && mlbbUser?.name) {
+      // MLBB user is logged in, show success and redirect
+      toast.success(`Welcome ${mlbbUser.name}!`, {
+        icon: "🎮",
+      });
+      navigate("/");
+    }
+  }, [isMLBBLoggedIn, mlbbUser?.name]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -129,6 +151,24 @@ export default function Login() {
             <FcGoogle className="w-5 h-5" />
             <span className="text-white/80 font-medium text-sm">
               Continue with Google
+            </span>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setShowMLBBLogin(true)}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3.5 glass-card hover:border-purple-500/30 transition-all duration-300 mb-4"
+          >
+            <img
+              src={mlbbLogo}
+              alt="MLBB"
+              className="w-6 h-6 object-contain"
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
+            />
+            <span className="text-white/80 font-medium text-sm">
+              Login with MLBB Account
             </span>
           </motion.button>
 
@@ -247,6 +287,16 @@ export default function Login() {
           </p>
         </div>
       </motion.div>
+      <MLBBLoginModal
+        isOpen={showMLBBLogin}
+        onClose={() => setShowMLBBLogin(false)}
+        onSuccess={() => {
+          setShowMLBBLogin(false);
+          toast.success("MLBB account connected!", {
+            icon: "🎮",
+          });
+        }}
+      />
     </div>
   );
 }
