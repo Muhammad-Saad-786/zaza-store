@@ -1,6 +1,6 @@
 // src/lib/mlbbAuthApi.js
 const API_URL = import.meta.env.PROD
-  ? "/api/mlbb"
+  ? "/api"
   : "http://localhost:3001/api/mlbb";
 
 export async function sendVerificationCode(roleId, zoneId) {
