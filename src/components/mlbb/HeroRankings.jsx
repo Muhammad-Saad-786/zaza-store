@@ -1,11 +1,6 @@
 // src/components/mlbb/HeroRankings.jsx
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  HiOutlineTrendingUp,
-  HiOutlineTrendingDown,
-  HiOutlineFilter,
-} from "react-icons/hi";
 import useMLBBHeroesStore from "../../stores/useMLBBHeroesStore";
 import MLBBToolsLayout from "./MLBBToolsLayout";
 import Spinner from "../ui/Spinner";

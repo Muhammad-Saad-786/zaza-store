@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import useChatStore from "../stores/useChatStore.js";
 import OnlineIndicator from "../components/ui/OnlineIndicator.jsx";
+
 import {
   HiOutlineHeart,
   HiHeart,
@@ -27,7 +28,6 @@ import Spinner from "../components/ui/Spinner";
 import useWishlistStore from "../stores/useWishlistStore";
 import { useNavigate } from "react-router-dom";
 import useOrderStore from "../stores/useOrderStore";
-import BuyConfirmModal from "../components/marketplace/BuyConfirmModal";
 import collector from "../../public/collector.png";
 import legend from "../../public/legend.png";
 
@@ -67,7 +67,19 @@ export default function AccountDetail() {
   const [reportReason, setReportReason] = useState("");
   const [reportDescription, setReportDescription] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
+  const { setSelectedAccount } = useOrderStore();
 
+  const handleBuyNow = () => {
+    const result = setSelectedAccount(account);
+
+    if (result.success) {
+      navigate("/checkout", {
+        state: {
+          account: account, // Pass the complete account object
+        },
+      });
+    }
+  };
   // Add report reasons
   const reportReasons = [
     "Scam or Fraud",
@@ -824,9 +836,7 @@ export default function AccountDetail() {
                         variant="primary"
                         size="lg"
                         className="w-full"
-                        onClick={() =>
-                          openBuyConfirm({ ...account, images: images || [] })
-                        }
+                        onClick={handleBuyNow}
                       >
                         <HiOutlineCheck className="w-5 h-5" />
                         Buy Now
@@ -885,7 +895,6 @@ export default function AccountDetail() {
           </div>
         </div>
       </div>
-      <BuyConfirmModal />
       {/* Report Modal */}
       {showReportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">

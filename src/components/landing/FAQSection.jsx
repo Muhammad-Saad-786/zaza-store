@@ -81,8 +81,8 @@ export default function FAQSection() {
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
                 className={`w-full text-left p-5 rounded-xl border transition-all duration-300 ${
                   openIndex === index
-                    ? "border-purple-500/30 bg-purple-500/5"
-                    : "border-white/5 bg-white/[0.02] hover:border-white/10"
+                    ? "border-purple-500/30 bg-[#1f1f29]"
+                    : "border-white/5 bg-[#1f1f29] hover:border-white/10"
                 }`}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -93,7 +93,7 @@ export default function FAQSection() {
                     className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                       openIndex === index
                         ? "bg-purple-500/20 text-purple-400"
-                        : "bg-white/5 text-white/40"
+                        : "bg-white/5 text-white"
                     }`}
                   >
                     {openIndex === index ? (
@@ -112,7 +112,7 @@ export default function FAQSection() {
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
-                      <p className="mt-4 text-white/50 leading-relaxed text-sm">
+                      <p className="mt-4 text-white leading-relaxed text-sm">
                         {faq.answer}
                       </p>
                     </motion.div>

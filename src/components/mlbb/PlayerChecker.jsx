@@ -11,6 +11,8 @@ import {
 } from "react-icons/hi";
 import useMLBBStore from "../../stores/useMLBBStore";
 import Button from "../ui/Button";
+import SEO from "../ui/SEO";
+import { pageSEO } from "../../config/seo";
 
 // MLBB character images for decoration
 const characterImages = [
@@ -98,6 +100,11 @@ export default function PlayerChecker() {
 
   return (
     <div className="min-h-screen w-full relative">
+      <SEO
+        title={pageSEO.playerChecker.title}
+        description={pageSEO.playerChecker.description}
+        keywords={pageSEO.playerChecker.keywords}
+      />
       {/* Background with gradient overlay */}
       <div className="absolute inset-0 bg-black">
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-black to-black" />

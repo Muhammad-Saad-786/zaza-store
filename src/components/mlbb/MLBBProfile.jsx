@@ -18,6 +18,8 @@ import useMLBBAuthStore from "../../stores/useMLBBAuthStore";
 import Spinner from "../ui/Spinner";
 import Button from "../ui/Button";
 import mlbbLogo from "/mobile-legends.png";
+import SEO from "../ui/SEO";
+import { pageSEO } from "../../config/seo";
 export default function MLBBProfile() {
   const navigate = useNavigate();
   const { mlbbUser, isLoggedIn, loading, fetchMLBBUserInfo, logoutMLBB } =
@@ -44,6 +46,12 @@ export default function MLBBProfile() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center">
+        <SEO
+          title={pageSEO.mlbbProfile.title}
+          description={pageSEO.mlbbProfile.description}
+          keywords={pageSEO.mlbbProfile.keywords}
+          noindex={true} // Don't index user profiles
+        />
         <div className="text-center">
           <Spinner size="lg" />
           <p className="mt-4 text-white/40">Loading profile...</p>

@@ -89,7 +89,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="relative bg-brand-darker border-t border-glass-border mt-20">
+    <footer className="relative bg-[#141319] border-t border-glass-border mt-20">
       {/* Gradient Top Line */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-brand-purple/50 to-transparent" />
 

@@ -12,7 +12,8 @@ import {
 import useMLBBHeroesStore from "../../stores/useMLBBHeroesStore";
 import MLBBToolsLayout from "./MLBBToolsLayout";
 import Spinner from "../ui/Spinner";
-
+import SEO from "../ui/SEO";
+import { pageSEO } from "../../config/seo";
 export default function HeroDetail() {
   const { heroName } = useParams();
   const navigate = useNavigate();
@@ -84,6 +85,18 @@ export default function HeroDetail() {
 
     return (
       <div className="space-y-2">
+        <SEO
+          title={pageSEO.title}
+          description={pageSEO.description}
+          keywords={pageSEO.keywords}
+          structuredData={{
+            "@context": "https://schema.org",
+            "@type": "VideoGame",
+            name: heroName,
+            gamePlatform: "Mobile",
+            genre: "MOBA",
+          }}
+        />
         {validIds.map((heroId, index) => (
           <div
             key={`${heroId}-${index}`}

@@ -73,7 +73,7 @@ export default function SmartSearch() {
     <div ref={containerRef} className="relative w-full max-w-md">
       <form onSubmit={handleSubmit}>
         <div className="relative">
-          <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+          <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white" />
           <input
             ref={inputRef}
             type="text"
@@ -81,13 +81,13 @@ export default function SmartSearch() {
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => query.length >= 2 && setQuery(query)}
             placeholder="Search accounts, heroes, ranks..."
-            className="input-glass pl-12 pr-10 py-2.5 w-full text-sm focus:border-brand-purple/50"
+            className="input-glass pl-12 pr-10 py-2.5 w-full text-sm text-white placeholder:text-white/70 focus:border-brand-purple/50"
           />
           {query && (
             <button
               type="button"
               onClick={clearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/30 hover:text-white/60 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white hover:text-white/80 transition-colors"
             >
               <HiOutlineX className="w-4 h-4" />
             </button>
@@ -95,7 +95,7 @@ export default function SmartSearch() {
           {/* Keyboard shortcut hint */}
           {!query && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1">
-              <kbd className="px-2 py-0.5 text-[10px] text-white/20 bg-white/5 rounded-md border border-glass-border">
+              <kbd className="px-2 py-0.5 text-[10px] text-white/70 bg-white/10 rounded-md border border-white/20">
                 Ctrl+K
               </kbd>
             </div>
@@ -116,13 +116,13 @@ export default function SmartSearch() {
             {loading ? (
               <div className="p-4 text-center">
                 <div className="w-5 h-5 border-2 border-brand-purple/30 border-t-brand-purple rounded-full animate-spin mx-auto" />
-                <p className="text-white/30 text-xs mt-2">Searching...</p>
+                <p className="text-white/50 text-xs mt-2">Searching...</p>
               </div>
             ) : results.length === 0 ? (
               <div className="p-4 text-center">
-                <HiOutlineSearch className="w-8 h-8 text-white/20 mx-auto mb-2" />
-                <p className="text-white/40 text-sm">No results found</p>
-                <p className="text-white/20 text-xs mt-1">
+                <HiOutlineSearch className="w-8 h-8 text-white/40 mx-auto mb-2" />
+                <p className="text-white/70 text-sm">No results found</p>
+                <p className="text-white/40 text-xs mt-1">
                   Try different keywords
                 </p>
               </div>
@@ -145,7 +145,7 @@ export default function SmartSearch() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <HiOutlineSearch className="w-5 h-5 text-white/20" />
+                        <HiOutlineSearch className="w-5 h-5 text-white/40" />
                       )}
                     </div>
 
@@ -156,11 +156,11 @@ export default function SmartSearch() {
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span
-                          className={`text-xs font-medium ${rankColors[account.rank] || "text-white/40"}`}
+                          className={`text-xs font-medium ${rankColors[account.rank] || "text-white/60"}`}
                         >
                           {account.rank}
                         </span>
-                        <span className="text-xs text-white/30">
+                        <span className="text-xs text-white/50">
                           {account.hero_count} Heroes • {account.skin_count}{" "}
                           Skins
                         </span>
@@ -190,7 +190,7 @@ export default function SmartSearch() {
                 <Link
                   to={`/marketplace?search=${encodeURIComponent(query)}`}
                   onClick={handleResultClick}
-                  className="flex items-center justify-center gap-2 p-3 mt-2 rounded-xl bg-brand-purple/10 text-brand-purple hover:bg-brand-purple/20 transition-colors text-sm font-medium"
+                  className="flex items-center justify-center gap-2 p-3 mt-2 rounded-xl bg-brand-purple/10 text-white hover:bg-brand-purple/20 transition-colors text-sm font-medium"
                 >
                   View all results for "{query}"
                 </Link>

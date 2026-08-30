@@ -30,7 +30,6 @@ import Revenue from "./pages/seller/Revenue";
 import Verification from "./pages/seller/Verification";
 import SelectRole from "./pages/SelectRole";
 import SellerProfile from "./pages/SellerProfile";
-import BuyConfirmModal from "./components/marketplace/BuyConfirmModal";
 import { useLocation } from "react-router-dom";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminOverview from "./pages/admin/AdminOverview";
@@ -57,6 +56,9 @@ import HeroRankings from "./components/mlbb/HeroRankings";
 import HeroPositions from "./components/mlbb/HeroPositions";
 import HeroSearch from "./components/mlbb/HeroSearch";
 import MLBBProfile from "./components/mlbb/MLBBProfile";
+import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
+
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -135,7 +137,6 @@ function App() {
         }}
       />
       <CookieBanner />
-      <BuyConfirmModal />
       <PaymentModal />
 
       <Routes>
@@ -159,6 +160,7 @@ function App() {
           <Route path="/tools/mlbb/rankings" element={<HeroRankings />} />
           <Route path="/tools/mlbb/positions" element={<HeroPositions />} />
           <Route path="/tools/mlbb/hero-search" element={<HeroSearch />} />
+
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/refund" element={<Refund />} />
@@ -187,6 +189,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardLayout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <Checkout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/order-confirmation/:orderId"
+            element={
+              <ProtectedRoute>
+                <OrderConfirmation />
               </ProtectedRoute>
             }
           />

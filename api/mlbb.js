@@ -24,7 +24,7 @@ export default async function handler(req, res) {
         break;
 
       case "heroes-rank":
-        url = `${baseUrl}/heroes/rank?days=${params.days || 1}&rank=${params.rank || "all"}&sort_field=${params.sort_field || "win_rate"}&sort_order=${params.sort_order || "desc"}&size=${params.size || 20}&index=${params.index || 1}&lang=${params.lang || "en"}`;
+        url = `${baseUrl}/heroes/rank?days=${params.days || 1}&rank=${params.rank || "all"}&sort_field=${params.sort_field || "win_rate"}&sort_order=${params.sort_order || "desc"}&size=${params.size || 50}&index=${params.index || 1}&lang=${params.lang || "en"}`;
         break;
 
       case "heroes-positions":

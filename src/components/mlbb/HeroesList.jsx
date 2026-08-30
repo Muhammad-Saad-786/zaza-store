@@ -12,7 +12,8 @@ import useMLBBHeroesStore from "../../stores/useMLBBHeroesStore";
 import HeroCard from "./HeroCard";
 import MLBBToolsLayout from "./MLBBToolsLayout";
 import Spinner from "../ui/Spinner";
-
+import SEO from "../ui/SEO";
+import { pageSEO } from "../../config/seo";
 export default function HeroesList() {
   const navigate = useNavigate();
   const {
@@ -65,6 +66,11 @@ export default function HeroesList() {
     <MLBBToolsLayout>
       {/* Search Bar */}
       <div className="max-w-xl mx-auto mb-8">
+        <SEO
+          title={pageSEO.heroes.title}
+          description={pageSEO.heroes.description}
+          keywords={pageSEO.heroes.keywords}
+        />
         <div className="relative group">
           <div className="absolute inset-0 rounded-2xl transition-all duration-500 bg-purple-500/10 blur-xl opacity-0 group-hover:opacity-100" />
           <div className="relative flex items-center gap-3">
