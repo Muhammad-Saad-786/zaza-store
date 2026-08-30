@@ -1,6 +1,6 @@
 // src/lib/mlbbHeroesApi.js
-const API_BASE_URL = import.meta.env.PROD
-  ? "/api"
+const API_URL = import.meta.env.PROD
+  ? "/api/mlbb"
   : "http://localhost:3001/api/mlbb";
 
 const headers = {
@@ -9,6 +9,7 @@ const headers = {
 
 export async function fetchAllHeroes(params = {}) {
   const queryParams = new URLSearchParams({
+    action: "heroes",
     size: params.size || 20,
     index: params.index || 1,
     order: params.order || "desc",
@@ -16,9 +17,7 @@ export async function fetchAllHeroes(params = {}) {
   });
 
   try {
-    const response = await fetch(`${API_BASE_URL}/heroes?${queryParams}`, {
-      headers,
-    });
+    const response = await fetch(`${API_URL}?${queryParams}`, { headers });
     if (!response.ok) throw new Error("Failed to fetch heroes");
     return await response.json();
   } catch (error) {
@@ -29,6 +28,7 @@ export async function fetchAllHeroes(params = {}) {
 
 export async function fetchHeroRank(params = {}) {
   const queryParams = new URLSearchParams({
+    action: "heroes-rank",
     days: params.days || 1,
     rank: params.rank || "all",
     sort_field: params.sortField || "win_rate",
@@ -39,9 +39,7 @@ export async function fetchHeroRank(params = {}) {
   });
 
   try {
-    const response = await fetch(`${API_BASE_URL}/heroes/rank?${queryParams}`, {
-      headers,
-    });
+    const response = await fetch(`${API_URL}?${queryParams}`, { headers });
     if (!response.ok) throw new Error("Failed to fetch hero rankings");
     return await response.json();
   } catch (error) {
@@ -51,7 +49,9 @@ export async function fetchHeroRank(params = {}) {
 }
 
 export async function fetchHeroPositions(params = {}) {
-  const queryParams = new URLSearchParams();
+  const queryParams = new URLSearchParams({
+    action: "heroes-positions",
+  });
 
   if (params.roles?.length) {
     params.roles.forEach((role) => queryParams.append("role", role));
@@ -66,10 +66,7 @@ export async function fetchHeroPositions(params = {}) {
   queryParams.append("lang", params.lang || "en");
 
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/heroes/positions?${queryParams}`,
-      { headers },
-    );
+    const response = await fetch(`${API_URL}?${queryParams}`, { headers });
     if (!response.ok) throw new Error("Failed to fetch hero positions");
     return await response.json();
   } catch (error) {
@@ -79,11 +76,16 @@ export async function fetchHeroPositions(params = {}) {
 }
 
 export async function fetchHeroDetails(heroIdentifier) {
+  const queryParams = new URLSearchParams({
+    action: "hero-detail",
+    id: heroIdentifier,
+    size: 20,
+    index: 1,
+    lang: "en",
+  });
+
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/heroes/${heroIdentifier}?size=20&index=1&lang=en`,
-      { headers },
-    );
+    const response = await fetch(`${API_URL}?${queryParams}`, { headers });
     if (!response.ok) throw new Error("Failed to fetch hero details");
     return await response.json();
   } catch (error) {
@@ -93,11 +95,14 @@ export async function fetchHeroDetails(heroIdentifier) {
 }
 
 export async function fetchHeroStats(heroIdentifier) {
+  const queryParams = new URLSearchParams({
+    action: "hero-stats",
+    id: heroIdentifier,
+    lang: "en",
+  });
+
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/heroes/${heroIdentifier}/stats?lang=en`,
-      { headers },
-    );
+    const response = await fetch(`${API_URL}?${queryParams}`, { headers });
     if (!response.ok) throw new Error("Failed to fetch hero stats");
     return await response.json();
   } catch (error) {
@@ -107,11 +112,16 @@ export async function fetchHeroStats(heroIdentifier) {
 }
 
 export async function fetchHeroSkillCombos(heroIdentifier) {
+  const queryParams = new URLSearchParams({
+    action: "hero-skill-combos",
+    id: heroIdentifier,
+    size: 20,
+    index: 1,
+    lang: "en",
+  });
+
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/heroes/${heroIdentifier}/skill-combos?size=20&index=1&lang=en`,
-      { headers },
-    );
+    const response = await fetch(`${API_URL}?${queryParams}`, { headers });
     if (!response.ok) throw new Error("Failed to fetch skill combos");
     return await response.json();
   } catch (error) {
@@ -122,6 +132,8 @@ export async function fetchHeroSkillCombos(heroIdentifier) {
 
 export async function fetchHeroTrends(heroIdentifier, params = {}) {
   const queryParams = new URLSearchParams({
+    action: "hero-trends",
+    id: heroIdentifier,
     days: params.days || 7,
     size: params.size || 20,
     index: params.index || 1,
@@ -129,10 +141,7 @@ export async function fetchHeroTrends(heroIdentifier, params = {}) {
   });
 
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/heroes/${heroIdentifier}/trends?${queryParams}`,
-      { headers },
-    );
+    const response = await fetch(`${API_URL}?${queryParams}`, { headers });
     if (!response.ok) throw new Error("Failed to fetch hero trends");
     return await response.json();
   } catch (error) {
@@ -142,11 +151,16 @@ export async function fetchHeroTrends(heroIdentifier, params = {}) {
 }
 
 export async function fetchHeroRelations(heroIdentifier) {
+  const queryParams = new URLSearchParams({
+    action: "hero-relations",
+    id: heroIdentifier,
+    size: 20,
+    index: 1,
+    lang: "en",
+  });
+
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/heroes/${heroIdentifier}/relations?size=20&index=1&lang=en`,
-      { headers },
-    );
+    const response = await fetch(`${API_URL}?${queryParams}`, { headers });
     if (!response.ok) throw new Error("Failed to fetch hero relations");
     return await response.json();
   } catch (error) {
@@ -157,6 +171,8 @@ export async function fetchHeroRelations(heroIdentifier) {
 
 export async function fetchHeroCounters(heroIdentifier, params = {}) {
   const queryParams = new URLSearchParams({
+    action: "hero-counters",
+    id: heroIdentifier,
     days: params.days || 1,
     rank: params.rank || "all",
     size: params.size || 20,
@@ -165,10 +181,7 @@ export async function fetchHeroCounters(heroIdentifier, params = {}) {
   });
 
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/heroes/${heroIdentifier}/counters?${queryParams}`,
-      { headers },
-    );
+    const response = await fetch(`${API_URL}?${queryParams}`, { headers });
     if (!response.ok) throw new Error("Failed to fetch hero counters");
     return await response.json();
   } catch (error) {
@@ -179,6 +192,8 @@ export async function fetchHeroCounters(heroIdentifier, params = {}) {
 
 export async function fetchHeroCompatibility(heroIdentifier, params = {}) {
   const queryParams = new URLSearchParams({
+    action: "hero-compatibility",
+    id: heroIdentifier,
     days: params.days || 1,
     rank: params.rank || "all",
     size: params.size || 20,
@@ -187,10 +202,7 @@ export async function fetchHeroCompatibility(heroIdentifier, params = {}) {
   });
 
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/heroes/${heroIdentifier}/compatibility?${queryParams}`,
-      { headers },
-    );
+    const response = await fetch(`${API_URL}?${queryParams}`, { headers });
     if (!response.ok) throw new Error("Failed to fetch hero compatibility");
     return await response.json();
   } catch (error) {

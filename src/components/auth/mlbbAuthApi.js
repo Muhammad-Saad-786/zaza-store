@@ -1,11 +1,11 @@
 // src/lib/mlbbAuthApi.js
 const API_URL = import.meta.env.PROD
-  ? "/api"
+  ? "/api/mlbb"
   : "http://localhost:3001/api/mlbb";
 
 export async function sendVerificationCode(roleId, zoneId) {
   try {
-    const response = await fetch(`${API_URL}/send-vc`, {
+    const response = await fetch(`${API_URL}?action=send-vc`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -44,7 +44,7 @@ export async function loginWithVerificationCode(
   verificationCode,
 ) {
   try {
-    const response = await fetch(`${API_URL}/login`, {
+    const response = await fetch(`${API_URL}?action=login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -91,7 +91,7 @@ export async function getMLBBUserInfo() {
     }
 
     const token = atob(encryptedToken);
-    const response = await fetch(`${API_URL}/user-info`, {
+    const response = await fetch(`${API_URL}?action=user-info`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
