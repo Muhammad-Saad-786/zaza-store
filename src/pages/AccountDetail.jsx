@@ -70,12 +70,16 @@ export default function AccountDetail() {
   const { setSelectedAccount } = useOrderStore();
 
   const handleBuyNow = () => {
-    const result = setSelectedAccount(account);
+    const accountWithImages = {
+      ...account,
+      images: images && images.length > 0 ? images : account?.images || [],
+    };
+    const result = setSelectedAccount(accountWithImages);
 
     if (result.success) {
       navigate("/checkout", {
         state: {
-          account: account, // Pass the complete account object
+          account: accountWithImages,
         },
       });
     }
@@ -398,7 +402,7 @@ export default function AccountDetail() {
                       className={`px-4 py-2 rounded-lg text-sm font-medium capitalize whitespace-nowrap transition-all ${
                         activeTab === tab
                           ? "bg-brand-purple/20 text-brand-purple"
-                          : "text-white/50 hover:text-white hover:bg-white/5"
+                          : "text-white hover:bg-white/5"
                       }`}
                     >
                       {tab}

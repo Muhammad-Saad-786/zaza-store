@@ -66,7 +66,7 @@ export default function HeroPositions() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   filters.roles?.includes(role.id)
                     ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                    : "text-white/40 hover:text-white/60 bg-white/[0.02] border border-transparent hover:border-white/10"
+                    : "text-white bg-white/[0.02] border border-transparent hover:border-white/10"
                 }`}
               >
                 <span>{role.icon}</span>
@@ -89,7 +89,7 @@ export default function HeroPositions() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   filters.lanes?.includes(lane.id)
                     ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                    : "text-white/40 hover:text-white/60 bg-white/[0.02] border border-transparent hover:border-white/10"
+                    : "text-white bg-white/[0.02] border border-transparent hover:border-white/10"
                 }`}
               >
                 <span>{lane.icon}</span>

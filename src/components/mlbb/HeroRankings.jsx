@@ -34,7 +34,7 @@ export default function HeroRankings() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filters.rank === rank
                   ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                  : "text-white/40 hover:text-white/60 bg-white/[0.02] border border-transparent"
+                  : "text-white bg-white/[0.02] border border-transparent"
               }`}
             >
               {rank.charAt(0).toUpperCase() + rank.slice(1)}
@@ -51,7 +51,7 @@ export default function HeroRankings() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filters.days === days
                   ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                  : "text-white/40 hover:text-white/60 bg-white/[0.02] border border-transparent"
+                  : "text-white bg-white/[0.02] border border-transparent"
               }`}
             >
               {days}D
@@ -68,7 +68,7 @@ export default function HeroRankings() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filters.sortField === sort.value
                   ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                  : "text-white/40 hover:text-white/60 bg-white/[0.02] border border-transparent"
+                  : "text-white bg-white/[0.02] border border-transparent"
               }`}
             >
               {sort.label}

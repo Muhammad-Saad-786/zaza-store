@@ -3,9 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import useAuthStore from "../../stores/useAuthStore";
-import GlassCard from "../../components/ui/GlassCard";
 import Spinner from "../../components/ui/Spinner";
-import Button from "../../components/ui/Button";
 import {
   HiOutlineBell,
   HiOutlineCheck,
@@ -17,8 +15,7 @@ import {
   HiOutlineShoppingBag,
   HiOutlineChat,
   HiOutlineStar,
-  HiOutlineClock,
-  HiOutlineFilter,
+  HiOutlineChevronDown,
 } from "react-icons/hi";
 import toast from "react-hot-toast";
 
@@ -26,61 +23,54 @@ const typeConfig = {
   warning: {
     icon: HiOutlineExclamation,
     color: "text-yellow-400",
-    bg: "bg-yellow-500/10 border-yellow-500/20",
+    bg: "bg-yellow-500/10 border-yellow-500/30",
   },
   ban: {
     icon: HiOutlineBan,
     color: "text-red-400",
-    bg: "bg-red-500/10 border-red-500/20",
+    bg: "bg-red-500/10 border-red-500/30",
   },
   refund: {
     icon: HiOutlineCash,
     color: "text-green-400",
-    bg: "bg-green-500/10 border-green-500/20",
+    bg: "bg-green-500/10 border-green-500/30",
   },
   escrow: {
     icon: HiOutlineShieldCheck,
-    color: "text-blue-400",
-    bg: "bg-blue-500/10 border-blue-500/20",
+    color: "text-[#f5a623]",
+    bg: "bg-[#f5a623]/10 border-[#f5a623]/30",
   },
   order: {
     icon: HiOutlineShoppingBag,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10 border-purple-500/20",
+    color: "text-[#f5a623]",
+    bg: "bg-[#f5a623]/10 border-[#f5a623]/30",
   },
   message: {
     icon: HiOutlineChat,
     color: "text-cyan-400",
-    bg: "bg-cyan-500/10 border-cyan-500/20",
+    bg: "bg-cyan-500/10 border-cyan-500/30",
   },
   review: {
     icon: HiOutlineStar,
     color: "text-amber-400",
-    bg: "bg-amber-500/10 border-amber-500/20",
+    bg: "bg-amber-500/10 border-amber-500/30",
   },
   verification: {
     icon: HiOutlineShieldCheck,
     color: "text-emerald-400",
-    bg: "bg-emerald-500/10 border-emerald-500/20",
+    bg: "bg-emerald-500/10 border-emerald-500/30",
   },
   report_update: {
     icon: HiOutlineCheck,
     color: "text-gray-400",
-    bg: "bg-gray-500/10 border-gray-500/20",
+    bg: "bg-gray-500/10 border-gray-500/30",
   },
   default: {
     icon: HiOutlineBell,
-    color: "text-white/50",
-    bg: "bg-white/5 border-white/10",
+    color: "text-white",
+    bg: "bg-[#1f1f29] border-[#2e2e3e]",
   },
 };
-
-const filterTabs = [
-  { key: "all", label: "All" },
-  { key: "unread", label: "Unread" },
-  { key: "warning", label: "Warnings" },
-  { key: "order", label: "Orders" },
-];
 
 export default function Notifications() {
   const { user } = useAuthStore();
@@ -163,17 +153,12 @@ export default function Notifications() {
     if (n.link) return n.link;
     switch (n.type) {
       case "order":
-        return "/dashboard/orders";
       case "escrow":
-        return "/dashboard/orders";
-      case "warning":
-        return "/dashboard";
       case "refund":
+      case "review":
         return "/dashboard/orders";
       case "message":
         return "/dashboard/messages";
-      case "review":
-        return "/dashboard/orders";
       case "verification":
         return "/seller-dashboard/verification";
       default:
@@ -181,7 +166,6 @@ export default function Notifications() {
     }
   };
 
-  // Filter notifications
   const filteredNotifications = notifications.filter((n) => {
     if (activeFilter === "unread") return !n.read;
     if (activeFilter === "all") return true;
@@ -199,94 +183,93 @@ export default function Notifications() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="space-y-6 max-w-2xl"
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6 max-w-3xl"
     >
-      {/* Header */}
+      {/* Eldorado Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-display font-extrabold text-white">
+        <div className="flex items-center gap-2">
+          <span className="text-[#f5a623] text-2xl font-black">︽</span>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Notifications
             {unreadCount > 0 && (
-              <span className="ml-2 px-2 py-1 bg-purple-500 text-white text-sm rounded-full">
+              <span className="ml-2 px-2.5 py-0.5 bg-[#f5a623] text-[#121217] font-black text-xs rounded-full">
                 {unreadCount} new
               </span>
             )}
           </h1>
-          <p className="text-white/40 text-sm mt-1">
-            Stay updated with your orders and account activity
-          </p>
         </div>
 
         <div className="flex gap-2">
           {unreadCount > 0 && (
-            <Button
+            <button
               onClick={markAllAsRead}
-              variant="ghost"
-              size="sm"
               disabled={markingAll}
+              className="px-3 py-1.5 bg-[#1f1f29] border border-[#2e2e3e] hover:border-[#f5a623] text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1"
             >
-              <HiOutlineCheck className="w-4 h-4" />
+              <HiOutlineCheck className="w-4 h-4 text-[#f5a623]" />
               Mark All Read
-            </Button>
+            </button>
           )}
           {notifications.length > 0 && (
-            <Button onClick={deleteAll} variant="ghost" size="sm">
+            <button
+              onClick={deleteAll}
+              className="px-3 py-1.5 bg-[#1f1f29] border border-[#2e2e3e] hover:border-red-500 text-red-400 text-xs font-bold rounded-xl transition-all flex items-center gap-1"
+            >
               <HiOutlineTrash className="w-4 h-4" />
               Clear All
-            </Button>
+            </button>
           )}
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {filterTabs.map((tab) => {
+      <div className="flex items-center gap-2 flex-wrap">
+        {["all", "unread", "order", "warning"].map((tab) => {
           const count =
-            tab.key === "all"
+            tab === "all"
               ? notifications.length
-              : tab.key === "unread"
+              : tab === "unread"
                 ? unreadCount
-                : notifications.filter((n) => n.type === tab.key).length;
-
-          if (count === 0 && tab.key !== "all") return null;
+                : notifications.filter((n) => n.type === tab).length;
 
           return (
             <button
-              key={tab.key}
-              onClick={() => setActiveFilter(tab.key)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                activeFilter === tab.key
-                  ? "bg-purple-500/20 text-purple-400"
-                  : "text-white/40 hover:text-white hover:bg-white/5"
+              key={tab}
+              onClick={() => setActiveFilter(tab)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${
+                activeFilter === tab
+                  ? "bg-[#f5a623] text-[#121217] shadow-sm"
+                  : "bg-[#1f1f29] border border-[#2e2e3e] text-white hover:border-white/20"
               }`}
             >
-              {tab.label} ({count})
+              {tab} ({count})
             </button>
           );
         })}
       </div>
 
-      {/* Notifications List */}
+      {/* Notifications List / Empty State */}
       {filteredNotifications.length === 0 ? (
-        <GlassCard className="p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <HiOutlineBell className="w-8 h-8 text-white/20" />
-          </div>
-          <h3 className="text-lg font-semibold text-white">
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-[#1f1f29] border border-[#2e2e3e] rounded-2xl p-10">
+          <img
+            src="/notifications.png"
+            alt="No notifications"
+            className="w-32 h-32 object-contain mb-4"
+            onError={(e) => {
+              e.target.src = "/empty-orders.png";
+            }}
+          />
+          <h2 className="text-xl font-black text-white">Nothing found</h2>
+          <p className="text-sm text-white/60 mt-1">
             {activeFilter === "unread"
-              ? "No unread notifications"
-              : "No notifications yet"}
-          </h3>
-          <p className="text-white/40 text-sm mt-1">
-            {activeFilter === "unread"
-              ? "You're all caught up!"
-              : "Notifications about your orders and account will appear here"}
+              ? "You are all caught up!"
+              : "You have no notifications yet"}
           </p>
-        </GlassCard>
+        </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <AnimatePresence>
             {filteredNotifications.map((n) => {
               const config = typeConfig[n.type] || typeConfig.default;
@@ -296,72 +279,63 @@ export default function Notifications() {
               return (
                 <motion.div
                   key={n.id}
-                  initial={{ opacity: 0, y: -10 }}
+                  initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: 50 }}
-                  transition={{ duration: 0.2 }}
+                  className={`relative p-4 rounded-xl border transition-all ${
+                    n.read
+                      ? "bg-[#1f1f29] border-[#2e2e3e]"
+                      : "bg-[#252533] border-[#f5a623]/40"
+                  }`}
                 >
-                  <div
-                    className={`relative p-4 rounded-xl border transition-all ${config.bg} ${!n.read ? "ring-1 ring-purple-500/20" : "opacity-70"}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Icon */}
-                      <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${config.bg}`}
-                      >
-                        <IconComponent className={`w-5 h-5 ${config.color}`} />
-                      </div>
+                  <div className="flex items-start gap-3.5">
+                    {/* Icon */}
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#16161e] border border-[#2e2e3e]`}
+                    >
+                      <IconComponent className={`w-5 h-5 ${config.color}`} />
+                    </div>
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-medium text-white truncate">
-                            {n.title}
-                          </p>
-                          <span className="text-xs text-white/20 flex-shrink-0">
-                            {getTimeAgo(n.created_at)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-white/50 mt-1 line-clamp-2">
-                          {n.message}
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-bold text-white truncate">
+                          {n.title}
                         </p>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-3 mt-2">
-                          {link && (
-                            <Link
-                              to={link}
-                              className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-                            >
-                              View Details →
-                            </Link>
-                          )}
-                          {!n.read && (
-                            <button
-                              onClick={() => markAsRead(n.id)}
-                              className="text-xs text-white/30 hover:text-white transition-colors"
-                            >
-                              Mark as read
-                            </button>
-                          )}
-                          <button
-                            onClick={() => deleteNotification(n.id)}
-                            disabled={deletingId === n.id}
-                            className="text-xs text-white/20 hover:text-red-400 transition-colors ml-auto"
-                          >
-                            {deletingId === n.id ? (
-                              <div className="w-3 h-3 border border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                            ) : (
-                              <HiOutlineTrash className="w-3 h-3" />
-                            )}
-                          </button>
-                        </div>
+                        <span className="text-xs text-white/40 flex-shrink-0">
+                          {getTimeAgo(n.created_at)}
+                        </span>
                       </div>
+                      <p className="text-xs text-white/80 mt-1 leading-relaxed">
+                        {n.message}
+                      </p>
 
-                      {/* Unread Dot */}
-                      {!n.read && (
-                        <div className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0 mt-1.5" />
-                      )}
+                      {/* Actions */}
+                      <div className="flex items-center gap-3 mt-2.5">
+                        {link && (
+                          <Link
+                            to={link}
+                            className="text-xs font-bold text-[#f5a623] hover:underline"
+                          >
+                            View Details ➔
+                          </Link>
+                        )}
+                        {!n.read && (
+                          <button
+                            onClick={() => markAsRead(n.id)}
+                            className="text-xs text-white/60 hover:text-white"
+                          >
+                            Mark as read
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteNotification(n.id)}
+                          disabled={deletingId === n.id}
+                          className="text-xs text-white/40 hover:text-red-400 transition-colors ml-auto"
+                        >
+                          <HiOutlineTrash className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -369,22 +343,6 @@ export default function Notifications() {
             })}
           </AnimatePresence>
         </div>
-      )}
-
-      {/* Empty State for Filter */}
-      {filteredNotifications.length === 0 && notifications.length > 0 && (
-        <GlassCard className="p-8 text-center">
-          <HiOutlineFilter className="w-10 h-10 text-white/20 mx-auto mb-3" />
-          <p className="text-white/40 text-sm">
-            No notifications match this filter
-          </p>
-          <button
-            onClick={() => setActiveFilter("all")}
-            className="text-purple-400 text-sm mt-1"
-          >
-            Show all notifications
-          </button>
-        </GlassCard>
       )}
     </motion.div>
   );

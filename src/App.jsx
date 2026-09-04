@@ -27,6 +27,10 @@ import SellerOverview from "./pages/seller/SellerOverview";
 import ListingsManagement from "./pages/seller/ListingsManagement";
 import SellerOrders from "./pages/seller/SellerOrders";
 import Revenue from "./pages/seller/Revenue";
+import SellerAnalytics from "./pages/seller/SellerAnalytics";
+import SellerReviews from "./pages/seller/SellerReviews";
+import SellerAutomation from "./pages/seller/SellerAutomation";
+import SellerSettings from "./pages/seller/SellerSettings";
 import Verification from "./pages/seller/Verification";
 import SelectRole from "./pages/SelectRole";
 import SellerProfile from "./pages/SellerProfile";
@@ -201,6 +205,14 @@ function App() {
             }
           />
           <Route
+            path="/order-confirmation"
+            element={
+              <ProtectedRoute>
+                <OrderConfirmation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/order-confirmation/:orderId"
             element={
               <ProtectedRoute>
@@ -238,10 +250,13 @@ function App() {
             <Route path="listings" element={<ListingsManagement />} />
             <Route path="orders" element={<SellerOrders />} />
             <Route path="revenue" element={<Revenue />} />
+            <Route path="analytics" element={<SellerAnalytics />} />
             <Route path="messages" element={<Messages />} />
+            <Route path="reviews" element={<SellerReviews />} />
+            <Route path="automation" element={<SellerAutomation />} />
             <Route path="verification" element={<Verification />} />
-            <Route path="profile" element={<ProfileSettings />} />
-            <Route path="settings" element={<ProfileSettings />} />
+            <Route path="profile" element={<SellerSettings />} />
+            <Route path="settings" element={<SellerSettings />} />
             <Route path="payment-settings" element={<PaymentSettings />} />
             <Route path="notifications" element={<Notifications />} />
           </Route>

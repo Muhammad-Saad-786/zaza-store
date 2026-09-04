@@ -120,7 +120,7 @@ export default function HeroDetail() {
                 onClick={() =>
                   navigate(`/tools/mlbb/hero/${getHeroName(heroId)}`)
                 }
-                className="text-white/70 hover:text-white text-sm font-medium truncate transition-colors"
+                className="text-white text-sm font-medium truncate transition-colors"
               >
                 {getHeroName(heroId)}
               </button>
@@ -136,7 +136,7 @@ export default function HeroDetail() {
       {/* Back Button */}
       <button
         onClick={() => navigate("/tools/mlbb/heroes")}
-        className="flex items-center gap-2 text-white/40 hover:text-white transition-colors mb-6"
+        className="flex items-center gap-2 text-white transition-colors mb-6"
       >
         <HiOutlineArrowLeft className="w-5 h-5" />
         Back to Heroes
@@ -454,7 +454,7 @@ export default function HeroDetail() {
                                             `/tools/mlbb/hero/${getHeroName(subHero.heroid)}`,
                                           )
                                         }
-                                        className="text-white/70 hover:text-white text-sm truncate transition-colors"
+                                        className="text-white text-sm truncate transition-colors"
                                       >
                                         {getHeroName(subHero.heroid)}
                                       </button>

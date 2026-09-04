@@ -15,6 +15,7 @@ import {
 } from "react-icons/hi";
 import useOrderStore from "../stores/useOrderStore";
 import useAuthStore from "../stores/useAuthStore";
+import { supabase } from "../lib/supabase";
 import Button from "../components/ui/Button";
 import SEO from "../components/ui/SEO";
 import toast from "react-hot-toast";
@@ -32,21 +33,58 @@ export default function Checkout() {
   const { user, profile } = useAuthStore();
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [localProcessing, setLocalProcessing] = useState(false);
+  const [accountImage, setAccountImage] = useState(null);
 
   useEffect(() => {
-    const accountFromState = location.state?.account;
+    async function loadAccount() {
+      const accountFromState = location.state?.account;
+      let targetAccount = accountFromState || selectedAccount;
 
-    if (accountFromState) {
-      // Use the account from location state directly
-      const result = setSelectedAccount(accountFromState);
-      if (!result?.success) {
+      if (!targetAccount) {
         navigate("/marketplace");
+        return;
       }
-    } else if (!selectedAccount) {
-      // No account in state or store
-      navigate("/marketplace");
+
+      // Check if image exists in targetAccount
+      let img =
+        targetAccount.images?.[0]?.url ||
+        (typeof targetAccount.images?.[0] === "string" ? targetAccount.images[0] : null) ||
+        targetAccount.image_urls?.[0] ||
+        targetAccount.image_url ||
+        targetAccount.image ||
+        targetAccount.main_image;
+
+      // If no image found, fetch directly from account_images table
+      if (!img && targetAccount.id) {
+        try {
+          const { data: dbImages } = await supabase
+            .from("account_images")
+            .select("url, is_cover")
+            .eq("account_id", targetAccount.id)
+            .order("sort_order", { ascending: true })
+            .limit(1);
+
+          if (dbImages && dbImages.length > 0) {
+            img = dbImages[0].url;
+            targetAccount = {
+              ...targetAccount,
+              images: dbImages,
+            };
+          }
+        } catch (err) {
+          console.warn("Failed to fetch image in checkout:", err);
+        }
+      }
+
+      if (img) {
+        setAccountImage(img);
+      }
+      setSelectedAccount(targetAccount);
     }
-  }, []);
+
+    loadAccount();
+  }, [location.state]);
 
   if (!selectedAccount) {
     return (
@@ -73,9 +111,39 @@ export default function Checkout() {
       return;
     }
 
-    const result = await processPurchase(paymentMethod);
-    if (result.success) {
-      navigate(`/order-confirmation/${result.orderId}`);
+    // For Stripe payment method
+    if (paymentMethod === "card") {
+      try {
+        setLocalProcessing(true);
+
+        // Initiate Stripe Checkout directly for this account (order is only placed upon successful payment!)
+        const { data, error } = await supabase.functions.invoke(
+          "create-checkout",
+          {
+            body: { account_id: selectedAccount.id },
+          },
+        );
+
+        if (error || !data?.checkout_url) {
+          console.error("Stripe checkout error:", error, data);
+          toast.error(data?.error || error?.message || "Failed to initiate payment");
+          return;
+        }
+
+        // Redirect to Stripe Checkout
+        window.location.href = data.checkout_url;
+      } catch (error) {
+        console.error("Checkout error:", error);
+        toast.error(error.message || "Failed to process payment");
+      } finally {
+        setLocalProcessing(false);
+      }
+    } else {
+      // For bank transfer, keep existing flow
+      const result = await processPurchase(paymentMethod);
+      if (result.success) {
+        navigate(`/order-confirmation/${result.orderId}`);
+      }
     }
   };
 
@@ -115,6 +183,7 @@ export default function Checkout() {
                   {(() => {
                     // Try all possible image sources
                     const imageUrl =
+                      accountImage ||
                       selectedAccount.images?.[0]?.url ||
                       selectedAccount.images?.[0] ||
                       selectedAccount.image_urls?.[0] ||
@@ -368,9 +437,9 @@ export default function Checkout() {
                 variant="primary"
                 size="lg"
                 className="w-full"
-                disabled={isProcessing || !agreeToTerms}
+                disabled={isProcessing || localProcessing || !agreeToTerms}
               >
-                {isProcessing ? (
+                {isProcessing || localProcessing ? (
                   <div className="flex items-center gap-2">
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Processing...

@@ -84,7 +84,7 @@ export default function MLBBToolsLayout({ children }) {
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     isActive
                       ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                      : "text-white/60 hover:text-white hover:bg-white/5 border border-transparent"
+                      : "text-white hover:bg-white/5 border border-transparent"
                   }`}
                 >
                   <tool.icon className="w-4 h-4" />

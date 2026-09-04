@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 import OnlineIndicator from "../../components/ui/OnlineIndicator";
 import {
   HiOutlinePaperAirplane,
-  HiOutlineUser,
-  HiOutlineShieldCheck,
   HiOutlineRefresh,
+  HiOutlineChatAlt2,
+  HiOutlineSparkles,
 } from "react-icons/hi";
 import useChatStore from "../../stores/useChatStore";
 import useAuthStore from "../../stores/useAuthStore";
-import GlassCard from "../../components/ui/GlassCard";
 import Spinner from "../../components/ui/Spinner";
+import QuickRepliesManager from "../../components/dashboard/QuickRepliesManager";
 
 export default function Messages() {
   const location = useLocation();
@@ -32,18 +32,18 @@ export default function Messages() {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef(null);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [isQuickRepliesOpen, setIsQuickRepliesOpen] = useState(false);
+  const [filterUnreadOnly, setFilterUnreadOnly] = useState(false);
 
   // Handle contact from account detail page
   useEffect(() => {
     const contactUser = location.state?.contactUser;
     if (contactUser) {
-      console.log("Opening conversation with:", contactUser);
       openConversation(
         contactUser.userId,
         contactUser.username,
         contactUser.avatar_url,
       );
-      // Clear the state so it doesn't re-trigger
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -76,7 +76,6 @@ export default function Messages() {
     setShowSidebar(false);
   };
 
-  // Merge active conversation into list if not present
   const allConversations = [...conversations];
   if (
     activeConversation &&
@@ -90,135 +89,174 @@ export default function Messages() {
     });
   }
 
+  const displayedConversations = filterUnreadOnly
+    ? allConversations.filter((c) => c.unread > 0)
+    : allConversations;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="h-[calc(100vh-120px)]"
+      className="h-[calc(100vh-140px)]"
     >
       <div className="flex h-full gap-4">
         {/* Conversations List */}
         <div
-          className={`${showSidebar ? "flex" : "hidden"} md:flex flex-col w-full md:w-80 flex-shrink-0`}
+          className={`${showSidebar ? "flex" : "hidden"} md:flex flex-col w-full md:w-80 flex-shrink-0 bg-[#16161e] border border-[#262636] rounded-2xl overflow-hidden`}
         >
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-display font-extrabold text-white">
-              Messages
-            </h1>
-            <button
-              onClick={fetchConversations}
-              className="text-sm text-brand-purple hover:text-brand-gold flex items-center gap-1"
-            >
-              <HiOutlineRefresh className="w-4 h-4" />
-              Refresh
-            </button>
+          <div className="p-4 border-b border-[#262636] flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[#f5a623] text-lg font-black">︽</span>
+              <h1 className="text-lg font-black text-white">Messages</h1>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setFilterUnreadOnly(!filterUnreadOnly)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                  filterUnreadOnly
+                    ? "bg-[#f5a623] text-[#121217]"
+                    : "bg-[#1f1f29] border border-[#2e2e3e] text-white hover:text-[#f5a623]"
+                }`}
+              >
+                Unread
+              </button>
+              <button
+                onClick={fetchConversations}
+                className="p-1.5 text-white/60 hover:text-[#f5a623] rounded-lg hover:bg-[#1f1f29]"
+                title="Refresh"
+              >
+                <HiOutlineRefresh className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          <GlassCard className="flex-1 overflow-y-auto p-0">
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {loading ? (
               <div className="flex justify-center py-12">
                 <Spinner size="md" />
               </div>
-            ) : allConversations.length === 0 ? (
-              <div className="text-center py-12 px-4">
-                <HiOutlineUser className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                <p className="text-white/40 text-sm">No conversations yet</p>
-                <p className="text-white/20 text-xs mt-1">
-                  Click "Contact" on an account to start chatting with a seller
+            ) : displayedConversations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                <img
+                  src="/messages.png"
+                  alt="No messages"
+                  className="w-24 h-24 object-contain mb-3"
+                  onError={(e) => {
+                    e.target.src = "/empty-orders.png";
+                  }}
+                />
+                <h3 className="text-sm font-bold text-white">No chats yet</h3>
+                <p className="text-white/50 text-xs mt-1">
+                  Buyer conversations and offers will appear here.
                 </p>
               </div>
             ) : (
-              allConversations.map((conv) => (
+              displayedConversations.map((conv) => (
                 <button
                   key={conv.userId}
                   onClick={() => handleOpenConversation(conv)}
-                  className={`w-full flex items-center gap-3 p-4 text-left transition-all hover:bg-white/5 border-b border-glass-border ${
+                  className={`w-full flex items-center gap-3 p-3 text-left rounded-xl transition-all ${
                     activeConversation?.userId === conv.userId
-                      ? "bg-brand-purple/10"
-                      : ""
+                      ? "bg-[#f5a623]/15 border border-[#f5a623]/40"
+                      : "hover:bg-[#1f1f29] border border-transparent"
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-purple overflow-visible to-brand-gold flex items-center justify-center text-sm font-bold text-white  flex-shrink-0 relative">
+                  <div className="w-10 h-10 rounded-full bg-[#1f1f29] border border-[#2e2e3e] flex items-center justify-center text-sm font-bold text-white flex-shrink-0 relative overflow-hidden">
                     {conv.avatar_url ? (
                       <img
                         src={conv.avatar_url}
                         alt=""
                         referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover rounded-full"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       conv.username?.charAt(0).toUpperCase() || "?"
                     )}
                     {conv.unread > 0 && (
-                      <span className="absolute z-10 -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                        {conv.unread}
-                      </span>
+                      <span className="absolute top-0 right-0 w-3 h-3 bg-[#f5a623] rounded-full" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium text-white truncate">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white truncate">
                         {conv.username}
                       </span>
-                      {conv.verified_seller && (
-                        <img
-                          src="/blue-verify-badge.png"
-                          alt="Verified"
-                          className="w-4 h-4 object-contain flex-shrink-0"
-                        />
+                      {conv.unread > 0 && (
+                        <span className="bg-[#f5a623] text-[#121217] text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                          {conv.unread}
+                        </span>
                       )}
                     </div>
+                    <p className="text-[11px] text-white/50 truncate mt-0.5">
+                      Click to chat
+                    </p>
                   </div>
                 </button>
               ))
             )}
-          </GlassCard>
+          </div>
         </div>
 
         {/* Chat Window */}
         <div
-          className={`${!showSidebar ? "flex" : "hidden"} md:flex flex-col flex-1`}
+          className={`${!showSidebar ? "flex" : "hidden"} md:flex flex-col flex-1 bg-[#16161e] border border-[#262636] rounded-2xl overflow-hidden`}
         >
           {activeConversation ? (
-            <GlassCard className="flex-1 flex flex-col p-0 overflow-hidden">
+            <div className="flex-1 flex flex-col h-full">
               {/* Chat Header */}
-              <div className="flex items-center gap-3 p-4 border-b border-glass-border">
-                <button
-                  onClick={() => setShowSidebar(true)}
-                  className="md:hidden text-white/40 hover:text-white mr-2"
-                >
-                  ← Back
-                </button>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-purple to-brand-gold flex items-center justify-center text-sm font-bold text-white overflow-hidden">
-                  {activeConversation.avatar_url ? (
-                    <img
-                      src={activeConversation.avatar_url}
-                      alt=""
-                      className="w-full h-full object-cover"
+              <div className="p-3.5 border-b border-[#262636] flex items-center justify-between bg-[#191924]">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowSidebar(true)}
+                    className="md:hidden text-white/60 hover:text-white mr-1 text-xs"
+                  >
+                    ← Back
+                  </button>
+                  <div className="w-9 h-9 rounded-full bg-[#1f1f29] border border-[#2e2e3e] flex items-center justify-center text-xs font-bold text-white overflow-hidden">
+                    {activeConversation.avatar_url ? (
+                      <img
+                        src={activeConversation.avatar_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      activeConversation.username?.charAt(0).toUpperCase() || "?"
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">
+                      {activeConversation.username}
+                    </p>
+                    <OnlineIndicator
+                      userId={activeConversation.userId}
+                      showText
+                      size="sm"
                     />
-                  ) : (
-                    activeConversation.username?.charAt(0).toUpperCase() || "?"
-                  )}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-white">
-                    {activeConversation.username}
-                  </p>
-                  <OnlineIndicator
-                    userId={activeConversation.userId}
-                    showText
-                    size="sm"
-                  />
-                </div>
+
+                <button
+                  onClick={() => setIsQuickRepliesOpen(true)}
+                  className="px-3 py-1 rounded-xl bg-[#f5a623]/15 text-[#f5a623] text-xs font-bold border border-[#f5a623]/30 hover:bg-[#f5a623]/25 transition-colors flex items-center gap-1.5"
+                >
+                  <HiOutlineSparkles className="w-3.5 h-3.5" /> Quick Replies
+                </button>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {/* Messages Feed */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#121217]">
                 {messages.length === 0 ? (
-                  <div className="text-center py-12">
-                    <HiOutlineUser className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                    <p className="text-white/30 text-sm">
-                      No messages yet. Say hello!
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <img
+                      src="/messages.png"
+                      alt="Empty chat"
+                      className="w-20 h-20 object-contain mb-3"
+                      onError={(e) => {
+                        e.target.src = "/empty-orders.png";
+                      }}
+                    />
+                    <p className="text-white/60 text-xs font-medium">
+                      No messages yet. Send an offer or greeting!
                     </p>
                   </div>
                 ) : (
@@ -230,15 +268,17 @@ export default function Messages() {
                         className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
+                          className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-xs ${
                             isMine
-                              ? "bg-brand-purple text-white rounded-br-md"
-                              : "bg-white/10 text-white rounded-bl-md"
+                              ? "bg-[#f5a623] text-[#121217] font-semibold rounded-br-sm shadow-md"
+                              : "bg-[#1f1f29] text-white border border-[#2e2e3e] rounded-bl-sm"
                           }`}
                         >
-                          <p>{msg.content}</p>
+                          <p className="leading-relaxed">{msg.content}</p>
                           <p
-                            className={`text-xs mt-1 ${isMine ? "text-white/50" : "text-white/30"}`}
+                            className={`text-[9px] mt-1 text-right ${
+                              isMine ? "text-[#121217]/70 font-bold" : "text-white/40"
+                            }`}
                           >
                             {new Date(msg.created_at).toLocaleTimeString([], {
                               hour: "2-digit",
@@ -253,41 +293,66 @@ export default function Messages() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Input */}
+              {/* Message Input Form */}
               <form
                 onSubmit={handleSend}
-                className="p-4 border-t border-glass-border flex gap-2"
+                className="p-3 border-t border-[#262636] bg-[#16161e] flex items-center gap-2"
               >
+                <button
+                  type="button"
+                  onClick={() => setIsQuickRepliesOpen(true)}
+                  className="p-2.5 text-[#f5a623] hover:bg-[#1f1f29] rounded-xl transition-colors"
+                  title="Insert Canned Response"
+                >
+                  <HiOutlineChatAlt2 className="w-5 h-5" />
+                </button>
+
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="input-glass flex-1 text-sm px-3"
+                  placeholder="Type a message or use quick replies..."
+                  className="flex-1 bg-[#121217] border border-[#2e2e3e] text-white text-xs px-4 py-2.5 rounded-xl focus:outline-none focus:border-[#f5a623]"
                   disabled={sending}
                 />
+
                 <button
                   type="submit"
                   disabled={sending || !newMessage.trim()}
-                  className="px-4 py-2 bg-brand-purple text-white rounded-xl hover:bg-brand-purple-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2.5 bg-[#f5a623] text-[#121217] font-black rounded-xl hover:bg-[#e0961f] transition-colors disabled:opacity-50 text-xs flex items-center gap-1.5 shadow-md"
                 >
-                  <HiOutlinePaperAirplane className="w-5 h-5" />
+                  <span>Send</span>
+                  <HiOutlinePaperAirplane className="w-4 h-4 transform rotate-90" />
                 </button>
               </form>
-            </GlassCard>
+            </div>
           ) : (
-            <GlassCard className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <HiOutlineUser className="w-16 h-16 text-white/20 mx-auto mb-4" />
-                <p className="text-white/40">Select a conversation</p>
-                <p className="text-white/20 text-sm mt-1">
-                  Choose a seller or buyer to start chatting
+            <div className="flex-1 flex items-center justify-center p-6 text-center">
+              <div>
+                <img
+                  src="/messages.png"
+                  alt="Select chat"
+                  className="w-28 h-28 object-contain mx-auto mb-4"
+                  onError={(e) => {
+                    e.target.src = "/empty-orders.png";
+                  }}
+                />
+                <h3 className="text-base font-black text-white">Select a conversation</h3>
+                <p className="text-white/50 text-xs mt-1">
+                  Choose a buyer or seller from the sidebar to begin chatting.
                 </p>
               </div>
-            </GlassCard>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Quick Replies Modal */}
+      <QuickRepliesManager
+        isOpen={isQuickRepliesOpen}
+        onClose={() => setIsQuickRepliesOpen(false)}
+        onSelectReply={(text) => setNewMessage(text)}
+      />
     </motion.div>
   );
 }

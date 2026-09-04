@@ -214,22 +214,33 @@ const useEscrowStore = create((set, get) => ({
         .single();
 
       if (order) {
-        await supabase.from("transactions").insert([
-          {
-            seller_id: order.seller_id,
-            order_id: orderId,
-            amount: order.amount,
-            type: "sale",
-            status: "completed",
-            description: `Escrow released for ${order.account?.title}`,
-          },
-        ]);
+        const { data: existingTx } = await supabase
+          .from("transactions")
+          .select("id")
+          .eq("order_id", orderId)
+          .maybeSingle();
+
+        const storeFee = +(order.amount * 0.08).toFixed(2);
+        const sellerEarnings = +(order.amount - storeFee).toFixed(2);
+
+        if (!existingTx) {
+          await supabase.from("transactions").insert([
+            {
+              seller_id: order.seller_id,
+              order_id: orderId,
+              amount: sellerEarnings,
+              type: "sale",
+              status: "completed",
+              description: `Escrow released for ${order.account?.title || "Account"} (8% store fee: $${storeFee} deducted)`,
+            },
+          ]);
+        }
 
         await supabase.from("notifications").insert([
           {
             user_id: order.seller_id,
             title: "🎉 Payment Released!",
-            message: `$${order.amount} has been released to your account for "${order.account?.title}".`,
+            message: `$${sellerEarnings} has been released to your account for "${order.account?.title}" (8% fee deducted).`,
             type: "escrow",
             link: "/seller-dashboard/revenue",
           },

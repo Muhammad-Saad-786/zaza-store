@@ -9,7 +9,6 @@ import useMLBBAuthStore from "../../stores/useMLBBAuthStore";
 import {
   HiOutlineHeart,
   HiOutlineShoppingBag,
-  HiOutlineUser,
   HiMenu,
   HiX,
   HiOutlineMail,
@@ -23,6 +22,10 @@ import {
   HiOutlineMap,
   HiOutlineSearch,
   HiOutlineChevronDown,
+  HiOutlineCurrencyDollar,
+  HiOutlineStar,
+  HiOutlineExternalLink,
+  HiOutlineTag,
 } from "react-icons/hi";
 import { FiChevronDown } from "react-icons/fi";
 import Logo from "../shared/Logo";
@@ -525,43 +528,36 @@ export default function Navbar() {
 
                   {/* User Menu */}
                   <div className="relative ml-1">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    <div
                       onClick={() => setUserMenuOpen(!userMenuOpen)}
-                      className="flex items-center gap-2 p-1.5 glass-card hover:border-brand-purple/30 transition-all rounded-xl"
+                      className="w-11 h-11 cursor-pointer rounded-full  flex items-center justify-center text-sm font-bold text-white overflow-hidden"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-[#1f1f29] flex items-center justify-center text-sm font-bold text-white overflow-hidden">
-                        {profile?.avatar_url ? (
-                          <img
-                            src={profile.avatar_url}
-                            alt="User Avatar"
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                            }}
-                          />
-                        ) : mlbbUser?.avatar ? (
-                          <img
-                            src={mlbbUser.avatar}
-                            alt="MLBB Avatar"
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                            }}
-                          />
-                        ) : mlbbUser?.name ? (
-                          mlbbUser.name.charAt(0).toUpperCase()
-                        ) : (
-                          profile?.username?.charAt(0).toUpperCase() || "U"
-                        )}
-                      </div>
-                      <FiChevronDown
-                        className={`w-4 h-4 text-white/50 transition-transform ${userMenuOpen ? "rotate-180" : ""}`}
-                      />
-                    </motion.button>
+                      {profile?.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt="User Avatar"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
+                      ) : mlbbUser?.avatar ? (
+                        <img
+                          src={mlbbUser.avatar}
+                          alt="MLBB Avatar"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
+                      ) : mlbbUser?.name ? (
+                        mlbbUser.name.charAt(0).toUpperCase()
+                      ) : (
+                        profile?.username?.charAt(0).toUpperCase() || "U"
+                      )}
+                    </div>
 
                     <AnimatePresence>
                       {userMenuOpen && (
@@ -578,129 +574,184 @@ export default function Navbar() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 8, scale: 0.98 }}
                             transition={{ duration: 0.15 }}
-                            className="absolute right-0 top-full mt-2 w-72 glass-modal rounded-xl overflow-hidden shadow-2xl z-50"
+                            className="absolute right-0 top-full mt-2 w-64 bg-[#16161e] border border-[#262636] rounded-xl overflow-hidden shadow-2xl z-50"
                           >
-                            <div className="p-2">
-                              {/* User Info Header */}
-                              <div className="px-4 py-3 border-b border-glass-border mb-1">
-                                <p className="text-sm font-semibold text-white truncate">
-                                  {profile?.username ||
-                                    mlbbUser?.name ||
-                                    "User"}
-                                </p>
-                                <p className="text-xs text-white/40 truncate mt-0.5">
-                                  {profile?.email ||
-                                    `Lv.${mlbbUser?.level} • Rank ${mlbbUser?.rank_level}`}
-                                </p>
+                            {/* ── User Header ── */}
+                            <div className="px-4 py-4 border-b border-[#262636] flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-[#1f1f29] border-2 border-[#f5a623]/30 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {profile?.avatar_url ? (
+                                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : mlbbUser?.avatar ? (
+                                  <img src={mlbbUser.avatar} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <span className="text-sm font-black text-[#f5a623]">
+                                    {(profile?.username || mlbbUser?.name || "U").charAt(0).toUpperCase()}
+                                  </span>
+                                )}
                               </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-white truncate">
+                                  {profile?.username || mlbbUser?.name || "User"}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <HiOutlineCurrencyDollar className="w-3 h-3 text-green-400" />
+                                  <span className="text-xs text-green-400 font-semibold">
+                                    $0.00
+                                  </span>
+                                </div>
+                                {profile?.rank && (
+                                  <p className="text-[11px] text-[#f5a623] font-semibold mt-0.5">{profile.rank}</p>
+                                )}
+                              </div>
+                            </div>
 
-                              {/* MLBB Account Info */}
-                              {isMLBBLoggedIn && mlbbUser && (
-                                <Link
-                                  to="/mlbb-profile"
-                                  onClick={() => setUserMenuOpen(false)}
-                                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-purple-500/5 group mb-1"
-                                >
-                                  {mlbbUser.avatar ? (
-                                    <img
-                                      src={mlbbUser.avatar}
-                                      alt={mlbbUser.name}
-                                      className="w-9 h-9 rounded-lg object-cover border border-purple-500/30"
-                                      referrerPolicy="no-referrer"
-                                    />
-                                  ) : (
-                                    <div className="w-9 h-9 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                                      <HiOutlineShieldCheck className="w-4 h-4 text-purple-400" />
-                                    </div>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-white flex items-center gap-1.5">
-                                      <HiOutlineShieldCheck className="w-3.5 h-3.5 text-purple-400" />
-                                      <span className="truncate">
-                                        {mlbbUser.name || "MLBB Player"}
-                                      </span>
-                                    </p>
-                                    <p className="text-xs text-white/40 mt-0.5">
-                                      Lv.{mlbbUser.level} • Rank{" "}
-                                      {mlbbUser.rank_level}
-                                    </p>
-                                  </div>
-                                  <HiOutlineChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
-                                </Link>
-                              )}
+                            {/* ── MLBB badge ── */}
+                            {isMLBBLoggedIn && mlbbUser && (
+                              <Link
+                                to="/mlbb-profile"
+                                onClick={() => setUserMenuOpen(false)}
+                                className="flex items-center gap-3 px-4 py-2.5 border-b border-[#262636] hover:bg-[#1f1f29] transition-colors group"
+                              >
+                                <HiOutlineShieldCheck className="w-4 h-4 text-purple-400" />
+                                <span className="text-xs font-semibold text-purple-300 group-hover:text-purple-200">
+                                  {mlbbUser.name} · Lv.{mlbbUser.level}
+                                </span>
+                                <HiOutlineChevronRight className="w-3.5 h-3.5 text-white/20 ml-auto" />
+                              </Link>
+                            )}
 
-                              {/* Menu Items */}
+                            {/* ── Nav items ── */}
+                            <div className="py-1.5">
                               {user && profile && (
                                 <>
+                                  {/* Orders */}
                                   <Link
-                                    to={
-                                      profile?.role === "seller" ||
-                                      profile?.role === "admin"
-                                        ? "/seller-dashboard"
-                                        : "/dashboard"
-                                    }
+                                    to={profile?.role === "seller" || profile?.role === "admin" ? "/seller-dashboard/orders" : "/dashboard/orders"}
                                     onClick={() => setUserMenuOpen(false)}
-                                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-white hover:bg-[#1f1f29] transition-all group"
                                   >
-                                    <HiOutlineUser className="w-4 h-4" />
-                                    Dashboard
+                                    <HiOutlineShoppingBag className="w-4 h-4 text-[#f5a623]" />
+                                    <span>Orders</span>
+                                    {ordersCount > 0 && (
+                                      <span className="ml-auto bg-[#f5a623] text-[#121217] text-[10px] font-black px-1.5 py-0.5 rounded-full">{ordersCount}</span>
+                                    )}
                                   </Link>
 
+                                  {/* Offers / Wishlist */}
+                                  <Link
+                                    to="/dashboard/wishlist"
+                                    onClick={() => setUserMenuOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-white hover:bg-[#1f1f29] transition-all"
+                                  >
+                                    <HiOutlineTag className="w-4 h-4 text-[#f5a623]" />
+                                    <span>Offers</span>
+                                  </Link>
+
+                                  {/* Wallet */}
+                                  <Link
+                                    to={profile?.role === "seller" || profile?.role === "admin" ? "/seller-dashboard/revenue" : "/dashboard"}
+                                    onClick={() => setUserMenuOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-white hover:bg-[#1f1f29] transition-all"
+                                  >
+                                    <HiOutlineCurrencyDollar className="w-4 h-4 text-[#f5a623]" />
+                                    <span>Wallet</span>
+                                  </Link>
+
+                                  {/* Become a Seller (only for buyers) */}
+                                  {profile?.role !== "seller" && profile?.role !== "admin" && (
+                                    <Link
+                                      to="/seller-dashboard"
+                                      onClick={() => setUserMenuOpen(false)}
+                                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-white hover:bg-[#1f1f29] transition-all"
+                                    >
+                                      <HiOutlineExternalLink className="w-4 h-4 text-[#f5a623]" />
+                                      <span>Become a Seller</span>
+                                    </Link>
+                                  )}
+
+                                  {/* Seller Dashboard link (for sellers) */}
+                                  {(profile?.role === "seller" || profile?.role === "admin") && (
+                                    <Link
+                                      to="/seller-dashboard"
+                                      onClick={() => setUserMenuOpen(false)}
+                                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#f5a623] hover:text-[#e0961f] hover:bg-[#1f1f29] transition-all"
+                                    >
+                                      <HiOutlineExternalLink className="w-4 h-4" />
+                                      <span>Seller Dashboard</span>
+                                    </Link>
+                                  )}
+
+                                  <div className="my-1 mx-3 border-t border-[#262636]" />
+
+                                  {/* Messages */}
+                                  <Link
+                                    to="/dashboard/messages"
+                                    onClick={() => setUserMenuOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-white hover:bg-[#1f1f29] transition-all"
+                                  >
+                                    <HiOutlineMail className="w-4 h-4 text-[#f5a623]" />
+                                    <span>Messages</span>
+                                    {unreadMessages > 0 && (
+                                      <span className="ml-auto bg-[#f5a623] text-[#121217] text-[10px] font-black px-1.5 py-0.5 rounded-full">{unreadMessages}</span>
+                                    )}
+                                  </Link>
+
+                                  {/* Notifications */}
+                                  <Link
+                                    to="/dashboard/notifications"
+                                    onClick={() => setUserMenuOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-white hover:bg-[#1f1f29] transition-all"
+                                  >
+                                    <HiOutlineBell className="w-4 h-4 text-[#f5a623]" />
+                                    <span>Notifications</span>
+                                    {notificationCount > 0 && (
+                                      <span className="ml-auto bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">{notificationCount}</span>
+                                    )}
+                                  </Link>
+
+                                  {/* Feedback / Reviews */}
+                                  <Link
+                                    to="/dashboard/reviews"
+                                    onClick={() => setUserMenuOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-white hover:bg-[#1f1f29] transition-all"
+                                  >
+                                    <HiOutlineStar className="w-4 h-4 text-[#f5a623]" />
+                                    <span>Feedback</span>
+                                  </Link>
+
+                                  {/* Account Settings */}
+                                  <Link
+                                    to={profile?.role === "seller" || profile?.role === "admin" ? "/seller-dashboard/settings" : "/dashboard/profile"}
+                                    onClick={() => setUserMenuOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-white hover:bg-[#1f1f29] transition-all"
+                                  >
+                                    <HiOutlineCog className="w-4 h-4 text-[#f5a623]" />
+                                    <span>Account settings</span>
+                                  </Link>
+
+                                  {/* Admin panel */}
                                   {profile?.role === "admin" && (
                                     <Link
                                       to="/admin"
                                       onClick={() => setUserMenuOpen(false)}
-                                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-white/5 transition-all"
+                                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-[#1f1f29] transition-all"
                                     >
                                       <HiOutlineShieldCheck className="w-4 h-4" />
-                                      Admin Panel
+                                      <span>Admin Panel</span>
                                     </Link>
                                   )}
 
-                                  <Link
-                                    to="/dashboard/messages"
-                                    onClick={() => setUserMenuOpen(false)}
-                                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
-                                  >
-                                    <HiOutlineMail className="w-4 h-4" />
-                                    Messages
-                                    {unreadMessages > 0 && (
-                                      <span className="ml-auto bg-cyber-neon text-white text-xs rounded-full px-2 py-0.5">
-                                        {unreadMessages}
-                                      </span>
-                                    )}
-                                  </Link>
-
-                                  <Link
-                                    to="/dashboard/wishlist"
-                                    onClick={() => setUserMenuOpen(false)}
-                                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
-                                  >
-                                    <HiOutlineHeart className="w-4 h-4" />
-                                    Wishlist
-                                  </Link>
-
-                                  <Link
-                                    to="/dashboard/profile"
-                                    onClick={() => setUserMenuOpen(false)}
-                                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
-                                  >
-                                    <HiOutlineCog className="w-4 h-4" />
-                                    Profile & Settings
-                                  </Link>
-
-                                  <div className="my-1 border-t border-glass-border" />
+                                  <div className="my-1 mx-3 border-t border-[#262636]" />
                                 </>
                               )}
 
+                              {/* Log out */}
                               <button
                                 onClick={handleSignOut}
-                                className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-all"
+                                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-400 hover:text-white hover:bg-red-500/20 transition-all"
                               >
                                 <HiOutlineLogout className="w-4 h-4" />
-                                {user && isMLBBLoggedIn
-                                  ? "Sign Out All"
-                                  : "Sign Out"}
+                                <span>{user && isMLBBLoggedIn ? "Sign Out All" : "Log out"}</span>
                               </button>
                             </div>
                           </motion.div>
@@ -813,7 +864,7 @@ export default function Navbar() {
                         <>
                           <button
                             onClick={() => toggleMobileDropdown(link.label)}
-                            className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                            className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-white hover:bg-white/5 transition-all"
                           >
                             <span className="font-medium">{link.label}</span>
                             <HiOutlineChevronDown
@@ -836,7 +887,7 @@ export default function Navbar() {
                                       key={item.label}
                                       to={item.href}
                                       onClick={() => setIsMobileOpen(false)}
-                                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all"
+                                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white hover:bg-white/5 transition-all"
                                     >
                                       {item.icon && (
                                         <item.icon className="w-4 h-4" />
@@ -853,7 +904,7 @@ export default function Navbar() {
                         <Link
                           to={link.href}
                           onClick={() => setIsMobileOpen(false)}
-                          className="flex items-center justify-between px-4 py-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                          className="flex items-center justify-between px-4 py-3 rounded-xl text-white hover:bg-white/5 transition-all"
                         >
                           <span className="font-medium">{link.label}</span>
                         </Link>
@@ -866,33 +917,79 @@ export default function Navbar() {
                 {isAnyUserLoggedIn ? (
                   <>
                     {user && profile && (
-                      <div className="border-t border-glass-border pt-4 space-y-1">
-                        <p className="px-4 text-xs text-white/30 uppercase tracking-wider">
-                          Account
-                        </p>
-                        <Link
-                          to={
-                            profile?.role === "seller" ||
-                            profile?.role === "admin"
-                              ? "/seller-dashboard"
-                              : "/dashboard"
-                          }
-                          onClick={() => setIsMobileOpen(false)}
-                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5"
-                        >
-                          <HiOutlineUser className="w-5 h-5" />
-                          Dashboard
+                      <div className="border-t border-[#262636] pt-3 space-y-0.5">
+                        {/* Mobile user header */}
+                        <div className="flex items-center gap-3 px-4 py-3 mb-1">
+                          <div className="w-10 h-10 rounded-full bg-[#1f1f29] border-2 border-[#f5a623]/30 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {profile?.avatar_url ? (
+                              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            ) : (
+                              <span className="text-sm font-black text-[#f5a623]">{(profile?.username || "U").charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-white">{profile?.username || "User"}</p>
+                            <p className="text-xs text-green-400 font-semibold">$0.00</p>
+                          </div>
+                        </div>
+
+                        <Link to={profile?.role === "seller" || profile?.role === "admin" ? "/seller-dashboard/orders" : "/dashboard/orders"} onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/5">
+                          <HiOutlineShoppingBag className="w-5 h-5 text-[#f5a623]" />
+                          Orders
                         </Link>
-                        {/* ... other mobile links ... */}
+                        <Link to="/dashboard/wishlist" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/5">
+                          <HiOutlineTag className="w-5 h-5 text-[#f5a623]" />
+                          Offers
+                        </Link>
+                        <Link to={profile?.role === "seller" || profile?.role === "admin" ? "/seller-dashboard/revenue" : "/dashboard"} onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/5">
+                          <HiOutlineCurrencyDollar className="w-5 h-5 text-[#f5a623]" />
+                          Wallet
+                        </Link>
+                        {profile?.role !== "seller" && profile?.role !== "admin" && (
+                          <Link to="/seller-dashboard" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/5">
+                            <HiOutlineExternalLink className="w-5 h-5 text-[#f5a623]" />
+                            Become a Seller
+                          </Link>
+                        )}
+                        {(profile?.role === "seller" || profile?.role === "admin") && (
+                          <Link to="/seller-dashboard" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#f5a623] hover:bg-white/5">
+                            <HiOutlineExternalLink className="w-5 h-5" />
+                            Seller Dashboard
+                          </Link>
+                        )}
+                        <Link to="/dashboard/messages" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/5">
+                          <HiOutlineMail className="w-5 h-5 text-[#f5a623]" />
+                          Messages
+                          {unreadMessages > 0 && <span className="ml-auto bg-[#f5a623] text-[#121217] text-xs font-black px-1.5 py-0.5 rounded-full">{unreadMessages}</span>}
+                        </Link>
+                        <Link to="/dashboard/notifications" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/5">
+                          <HiOutlineBell className="w-5 h-5 text-[#f5a623]" />
+                          Notifications
+                          {notificationCount > 0 && <span className="ml-auto bg-red-500 text-white text-xs font-black px-1.5 py-0.5 rounded-full">{notificationCount}</span>}
+                        </Link>
+                        <Link to="/dashboard/reviews" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/5">
+                          <HiOutlineStar className="w-5 h-5 text-[#f5a623]" />
+                          Feedback
+                        </Link>
+                        <Link to={profile?.role === "seller" || profile?.role === "admin" ? "/seller-dashboard/settings" : "/dashboard/profile"} onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/5">
+                          <HiOutlineCog className="w-5 h-5 text-[#f5a623]" />
+                          Account settings
+                        </Link>
+                        {profile?.role === "admin" && (
+                          <Link to="/admin" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-white/5">
+                            <HiOutlineShieldCheck className="w-5 h-5" />
+                            Admin Panel
+                          </Link>
+                        )}
                       </div>
                     )}
-                    <div className="border-t border-glass-border pt-4">
+                    <div className="border-t border-[#262636] pt-2 mt-2">
                       <button
                         onClick={handleSignOut}
-                        className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-white/5"
+                        className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:text-white hover:bg-red-500/20"
                       >
                         <HiOutlineLogout className="w-5 h-5" />
-                        {user && isMLBBLoggedIn ? "Sign Out All" : "Sign Out"}
+                        {user && isMLBBLoggedIn ? "Sign Out All" : "Log out"}
                       </button>
                     </div>
                   </>

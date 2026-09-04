@@ -17,7 +17,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   global: {
     headers: {
       "X-Client-Info": "zaza-store",
-      "X-Frame-Options": "DENY",
     },
   },
   db: {

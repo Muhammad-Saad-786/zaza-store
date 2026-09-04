@@ -85,7 +85,7 @@ export default function Marketplace() {
         </div>
 
         {/* Sort Bar */}
-        <SortBar viewMode={viewMode} setViewMode={setViewMode} />
+        {/* <SortBar viewMode={viewMode} setViewMode={setViewMode} /> */}
 
         {/* Loading State */}
         {loading ? (

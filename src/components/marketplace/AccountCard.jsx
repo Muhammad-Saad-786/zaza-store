@@ -32,7 +32,6 @@ export default function AccountCard({ account, viewMode }) {
     <motion.div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
       className="h-full"
     >

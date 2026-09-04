@@ -47,7 +47,7 @@ export default function SortBar({ viewMode, setViewMode }) {
           className={`p-2 rounded-lg transition-all ${
             viewMode === "grid"
               ? "bg-brand-purple/20 text-brand-purple"
-              : "text-white/40 hover:text-white hover:bg-white/5"
+              : "text-white hover:bg-white/5"
           }`}
         >
           <HiOutlineViewGrid className="w-5 h-5" />
@@ -57,7 +57,7 @@ export default function SortBar({ viewMode, setViewMode }) {
           className={`p-2 rounded-lg transition-all ${
             viewMode === "list"
               ? "bg-brand-purple/20 text-brand-purple"
-              : "text-white/40 hover:text-white hover:bg-white/5"
+              : "text-white hover:bg-white/5"
           }`}
         >
           <HiOutlineViewList className="w-5 h-5" />

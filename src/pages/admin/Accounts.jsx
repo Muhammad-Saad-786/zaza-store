@@ -155,7 +155,7 @@ export default function AdminAccounts() {
                     : f.key === "rejected"
                       ? "bg-red-500/20 text-red-400"
                       : "bg-purple-500/20 text-purple-400"
-                : "text-white/50 hover:text-white hover:bg-white/5"
+                : "text-white hover:bg-white/5"
             }`}
           >
             {f.label} ({f.count})
