@@ -22,7 +22,6 @@ function getCorsHeaders(req: Request) {
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -38,15 +37,12 @@ serve(async (req) => {
     }
 
     const body = await req.text();
-
-    // Verify webhook signature
     const event = await stripe.webhooks.constructEventAsync(
       body,
       signature,
       stripeWebhookSecret,
     );
 
-    // Initialize Supabase admin client
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -57,18 +53,22 @@ serve(async (req) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
-        let orderId = session.metadata?.order_id;
+        console.log("Checkout completed. Session ID:", session.id);
+        console.log("Metadata:", JSON.stringify(session.metadata));
+
+        const orderId = session.metadata?.order_id || "";
         const accountId = session.metadata?.account_id;
         const buyerId = session.metadata?.buyer_id;
         const sellerId = session.metadata?.seller_id;
-        console.log(`Checkout completed. Order: ${orderId}, Account: ${accountId}, Session: ${session.id}`);
 
         const paidAmount = session.amount_total ? session.amount_total / 100 : 0;
-        const fee = +(paidAmount * 0.08).toFixed(2); // 8% Store Fee
+        const fee = +(paidAmount * 0.08).toFixed(2);
         const sellerEarnings = +(paidAmount - fee).toFixed(2);
 
         let order = null;
+        let resolvedOrderId = orderId;
 
+        // Try to find existing order
         if (orderId) {
           const { data: ord } = await supabaseAdmin
             .from("orders")
@@ -78,6 +78,7 @@ serve(async (req) => {
           order = ord;
         }
 
+        // If not found by order_id, try by session ID
         if (!order && session.id) {
           const { data: ordBySession } = await supabaseAdmin
             .from("orders")
@@ -85,10 +86,13 @@ serve(async (req) => {
             .eq("stripe_checkout_session_id", session.id)
             .maybeSingle();
           order = ordBySession;
+          if (order) resolvedOrderId = order.id;
         }
 
-        // If order doesn't exist yet, create it now that payment is confirmed!
+        // If order doesn't exist, create it
         if (!order) {
+          console.log("Order not found. Creating new order...");
+
           const { data: newOrder, error: createError } = await supabaseAdmin
             .from("orders")
             .insert({
@@ -110,15 +114,18 @@ serve(async (req) => {
             .single();
 
           if (createError) {
-            console.error("Webhook error creating order:", createError);
-            break;
+            console.error("Error creating order:", createError);
+            throw new Error(`Failed to create order: ${createError.message}`);
           }
+
           order = newOrder;
-          orderId = order.id;
+          resolvedOrderId = newOrder.id;
+          console.log("Order created:", newOrder.id);
         } else {
-          orderId = order.id;
-          // Update existing order status to paid and in_progress
-          await supabaseAdmin
+          // Update existing order
+          console.log("Updating existing order:", resolvedOrderId);
+
+          const { error: updateError } = await supabaseAdmin
             .from("orders")
             .update({
               payment_status: "paid",
@@ -129,74 +136,89 @@ serve(async (req) => {
               paid_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
-            .eq("id", orderId);
+            .eq("id", resolvedOrderId);
+
+          if (updateError) {
+            console.error("Error updating order:", updateError);
+          }
         }
 
         // Mark account as sold
-        const targetAccId = order.account_id || accountId;
-        if (targetAccId) {
-          await supabaseAdmin
+        if (order.account_id || accountId) {
+          const targetAccountId = order.account_id || accountId;
+          const { error: accountError } = await supabaseAdmin
             .from("accounts")
             .update({
               status: "sold",
               updated_at: new Date().toISOString(),
             })
-            .eq("id", targetAccId);
+            .eq("id", targetAccountId);
+
+          if (accountError) {
+            console.error("Error updating account:", accountError);
+          }
         }
 
-        // Auto-manage Transactions (8% Store fee auto-deducted)
+        // Create transaction
         const { data: existingTx } = await supabaseAdmin
           .from("transactions")
           .select("id")
-          .eq("order_id", orderId)
+          .eq("order_id", resolvedOrderId)
           .maybeSingle();
 
         if (!existingTx) {
-          await supabaseAdmin.from("transactions").insert({
-            seller_id: order.seller_id || sellerId,
-            order_id: orderId,
-            amount: sellerEarnings,
-            type: "sale",
-            status: "completed",
-            description: `Order #${orderId} payment verified (8% store fee: $${fee} deducted)`,
-          });
-          console.log(`Transaction recorded for seller: $${sellerEarnings}`);
+          const { error: txError } = await supabaseAdmin
+            .from("transactions")
+            .insert({
+              seller_id: order.seller_id || sellerId,
+              order_id: resolvedOrderId,
+              amount: sellerEarnings,
+              type: "sale",
+              status: "completed",
+              description: `Order #${resolvedOrderId} payment verified (8% store fee: $${fee} deducted)`,
+            });
+
+          if (txError) {
+            console.error("Error creating transaction:", txError);
+          }
         }
 
-        // Notify Seller
+        // Notify seller
         const notifySellerId = order.seller_id || sellerId;
         if (notifySellerId) {
           await supabaseAdmin.from("notifications").insert({
             user_id: notifySellerId,
             type: "order",
             title: "💰 Order Paid via Stripe!",
-            message: `Order #${orderId} was paid ($${paidAmount}). Net earnings: $${sellerEarnings} (8% fee deducted). Please deliver credentials.`,
+            message: `Order #${resolvedOrderId} was paid ($${paidAmount}). Net earnings: $${sellerEarnings} (8% fee deducted). Please deliver credentials.`,
             link: "/seller-dashboard/orders",
           });
         }
 
-        // Notify Buyer
+        // Notify buyer
         const notifyBuyerId = order.buyer_id || buyerId;
         if (notifyBuyerId) {
           await supabaseAdmin.from("notifications").insert({
             user_id: notifyBuyerId,
             type: "order",
             title: "🎉 Payment Confirmed!",
-            message: `Your payment of $${paidAmount} for Order #${orderId} was successful. The seller has been notified to deliver your account.`,
-            link: `/order-confirmation/${orderId}`,
+            message: `Your payment of $${paidAmount} for Order #${resolvedOrderId} was successful. The seller has been notified to deliver your account.`,
+            link: `/order-confirmation/${resolvedOrderId}`,
           });
         }
+
+        console.log("Order processing complete:", resolvedOrderId);
         break;
       }
 
       case "payment_intent.succeeded": {
         const paymentIntent = event.data.object;
         const orderId = paymentIntent.metadata?.order_id;
-        console.log(`Payment succeeded: ${paymentIntent.id}, order: ${orderId}`);
+        console.log(`Payment intent succeeded. Order: ${orderId}`);
 
         if (orderId) {
           const paidAmount = paymentIntent.amount ? paymentIntent.amount / 100 : 0;
-          await supabaseAdmin
+          const { error } = await supabaseAdmin
             .from("orders")
             .update({
               payment_status: "paid",
@@ -209,6 +231,10 @@ serve(async (req) => {
             })
             .eq("id", orderId)
             .neq("payment_status", "paid");
+
+          if (error) {
+            console.error("Error updating order from payment_intent:", error);
+          }
         }
         break;
       }
@@ -216,10 +242,10 @@ serve(async (req) => {
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object;
         const orderId = paymentIntent.metadata?.order_id;
-        console.log(`Payment failed: ${paymentIntent.id}, order: ${orderId}`);
+        console.log(`Payment failed. Order: ${orderId}`);
 
         if (orderId) {
-          await supabaseAdmin
+          const { error } = await supabaseAdmin
             .from("orders")
             .update({
               payment_status: "failed",
@@ -227,6 +253,10 @@ serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq("id", orderId);
+
+          if (error) {
+            console.error("Error updating failed order:", error);
+          }
         }
         break;
       }

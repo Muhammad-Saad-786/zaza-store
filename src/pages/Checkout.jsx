@@ -111,16 +111,24 @@ export default function Checkout() {
       return;
     }
 
-    // For Stripe payment method
     if (paymentMethod === "card") {
       try {
         setLocalProcessing(true);
 
-        // Initiate Stripe Checkout directly for this account (order is only placed upon successful payment!)
+        // Step 1: Create the order first
+        const orderResult = await processPurchase("card");
+
+        if (!orderResult.success) {
+          return;
+        }
+
+        // Step 2: Now create Stripe checkout with the order ID
         const { data, error } = await supabase.functions.invoke(
           "create-checkout",
           {
-            body: { account_id: selectedAccount.id },
+            body: {
+              order_id: orderResult.orderId,  // Send order_id, not account_id
+            },
           },
         );
 
@@ -130,7 +138,7 @@ export default function Checkout() {
           return;
         }
 
-        // Redirect to Stripe Checkout
+        // Step 3: Redirect to Stripe
         window.location.href = data.checkout_url;
       } catch (error) {
         console.error("Checkout error:", error);
@@ -139,7 +147,7 @@ export default function Checkout() {
         setLocalProcessing(false);
       }
     } else {
-      // For bank transfer, keep existing flow
+      // Bank transfer flow
       const result = await processPurchase(paymentMethod);
       if (result.success) {
         navigate(`/order-confirmation/${result.orderId}`);
@@ -191,7 +199,7 @@ export default function Checkout() {
                       selectedAccount.image ||
                       selectedAccount.main_image ||
                       (typeof selectedAccount.images === "string" &&
-                      selectedAccount.images.startsWith("http")
+                        selectedAccount.images.startsWith("http")
                         ? selectedAccount.images
                         : null);
 
@@ -257,11 +265,10 @@ export default function Checkout() {
               <div className="space-y-3">
                 <button
                   onClick={() => setPaymentMethod("card")}
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all ${
-                    paymentMethod === "card"
+                  className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all ${paymentMethod === "card"
                       ? "border-brand-purple bg-brand-purple/10"
                       : "border-white/10 bg-black/30 hover:border-white/20"
-                  }`}
+                    }`}
                 >
                   <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
                     <HiOutlineCreditCard className="w-5 h-5 text-white/60" />
@@ -281,11 +288,10 @@ export default function Checkout() {
 
                 <button
                   onClick={() => setPaymentMethod("bank")}
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all ${
-                    paymentMethod === "bank"
+                  className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all ${paymentMethod === "bank"
                       ? "border-brand-purple bg-brand-purple/10"
                       : "border-white/10 bg-black/30 hover:border-white/20"
-                  }`}
+                    }`}
                 >
                   <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
                     <HiOutlineLockClosed className="w-5 h-5 text-white/60" />

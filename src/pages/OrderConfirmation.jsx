@@ -10,6 +10,7 @@ import {
   HiOutlineCreditCard,
   HiOutlineClock,
 } from "react-icons/hi";
+import useAuthStore from "../stores/useAuthStore";
 import useOrderStore from "../stores/useOrderStore";
 import { supabase } from "../lib/supabase";
 import Button from "../components/ui/Button";
@@ -32,35 +33,73 @@ export default function OrderConfirmation() {
 
       let resolvedOrderId = orderId;
 
-      // If returning from Stripe Checkout with session_id, verify immediately
-      if (sessionId) {
+      // If returning from Stripe Checkout with session_id,
+      // DO NOT call create-checkout verify action (causes 400 error).
+      // The Stripe webhook already handles updating the order in DB.
+      // Instead, rely on fallback logic to fetch order from database.
+      // The verify call is removed - webhook already processed the payment.
+
+      // Fetch the updated order - always try to fetch, even if no resolvedOrderId yet
+      // This ensures order appears even if verification metadata is missing
+      if (resolvedOrderId) {
+        await fetchOrder(resolvedOrderId);
+      }
+      // If we have session_id, always try to fetch the order (verification may have failed
+      // or order may have been created by webhook already)
+      if (sessionId && !resolvedOrderId) {
         try {
-          setVerifying(true);
-          const { data, error } = await supabase.functions.invoke("create-checkout", {
-            body: {
-              action: "verify",
-              session_id: sessionId,
-              order_id: orderId || undefined,
-            },
-          });
-          if (error) {
-            console.warn("Session verification check warning:", error);
+          const user = useAuthStore.getState().user;
+          if (user) {
+            try {
+              const { data: recentOrders } = await supabase
+                .from("orders")
+                .select("id, payment_status, created_at, stripe_checkout_session_id")
+                .eq("buyer_id", user.id)
+                .order("created_at", { ascending: false })
+                .limit(1);
+              if (recentOrders && recentOrders[0]) {
+                await fetchOrder(recentOrders[0].id);
+              } else {
+                // Fallback: try to find order by Stripe session ID if buyer_id match failed
+                try {
+                  const { data: sessionOrders } = await supabase
+                    .from("orders")
+                    .select("id")
+                    .eq("stripe_checkout_session_id", sessionId)
+                    .maybeSingle();
+                  if (sessionOrders?.id) {
+                    await fetchOrder(sessionOrders.id);
+                  }
+                } catch (err) {
+                  console.warn("Fallback session order fetch error:", err);
+                }
+              }
+            } catch (err) {
+              console.warn("Fallback order fetch error:", err);
+            }
           } else {
-            console.log("Session verified:", data);
-            if (data?.order_id) {
-              resolvedOrderId = data.order_id;
+            // If no user authenticated, try to find order by Stripe session ID as guest
+            try {
+              const { data: sessionOrders } = await supabase
+                .from("orders")
+                .select("id")
+                .eq("stripe_checkout_session_id", sessionId)
+                .maybeSingle();
+              if (sessionOrders?.id) {
+                await fetchOrder(sessionOrders.id);
+              }
+            } catch (err) {
+              console.warn("Fallback guest order fetch error:", err);
             }
           }
         } catch (err) {
-          console.warn("Verification invoke error:", err);
-        } finally {
-          if (isMounted) setVerifying(false);
+          console.warn("Fallback order fetch error:", err);
         }
       }
-
-      // Fetch the updated order
-      if (resolvedOrderId) {
-        await fetchOrder(resolvedOrderId);
+      // After fetch attempt (success or failure), stop verifying
+      // This prevents the infinite loading spinner when order fetch fails or times out
+      if (!resolvedOrderId && sessionId) {
+        setVerifying(false);
       }
     }
 

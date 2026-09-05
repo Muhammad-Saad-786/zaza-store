@@ -36,9 +36,6 @@ serve(async (req) => {
 
     // Get auth user from request Authorization header
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header provided");
-    }
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -55,8 +52,16 @@ serve(async (req) => {
       error: userError,
     } = await supabaseClient.auth.getUser();
 
+    // If no user authenticated, we can still proceed with verify action
+    // by using metadata from the Stripe session, or fall back to creating
+    // order with guest IDs. For non-verify actions, require authentication.
     if (userError || !user) {
-      throw new Error("Unauthorized: " + (userError?.message || "Invalid session"));
+      if (action !== "verify") {
+        throw new Error("Unauthorized: " + (userError?.message || "Invalid session"));
+      }
+      // For verify action, allow proceeding without authenticated user
+      // The order creation will use metadata fallbacks (user.id will be undefined,
+      // but we have || user.id fallback in the order insertion)
     }
 
     // Use service role for database operations
@@ -103,8 +108,8 @@ serve(async (req) => {
           const { data: newOrder, error: createError } = await supabaseAdmin
             .from("orders")
             .insert({
-              buyer_id: session.metadata?.buyer_id || user.id,
-              seller_id: session.metadata?.seller_id,
+              buyer_id: session.metadata?.buyer_id || (user?.id || "guest"),
+              seller_id: session.metadata?.seller_id || (user?.id || "guest"),
               account_id: targetAccountId,
               amount: paidAmount,
               payment_status: "paid",
