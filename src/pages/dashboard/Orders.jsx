@@ -1,13 +1,12 @@
+// src/pages/dashboard/Orders.jsx
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../lib/supabase";
 import useAuthStore from "../../stores/useAuthStore";
-import GlassCard from "../../components/ui/GlassCard";
+import useOrderStore from "../../stores/useOrderStore";
 import Spinner from "../../components/ui/Spinner";
 import toast from "react-hot-toast";
-import useEscrowStore from "../../stores/useEscrowStore";
-import usePaymentStore from "../../stores/usePaymentStore";
 import {
   HiOutlineChevronDown,
   HiOutlineClock,
@@ -15,17 +14,27 @@ import {
   HiOutlineXCircle,
   HiOutlineStar,
   HiOutlineRefresh,
+  HiOutlineKey,
+  HiOutlineChat,
+  HiOutlineEye,
+  HiOutlineX,
+  HiOutlineClipboardCopy,
 } from "react-icons/hi";
 
 export default function Orders() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("recent");
   const { user } = useAuthStore();
-  const { openPaymentModal } = usePaymentStore();
-  const { confirmReceipt } = useEscrowStore();
+  const { confirmReceipt } = useOrderStore();
+
+  // Credentials modal state
+  const [showCredentialsModal, setShowCredentialsModal] = useState(null);
+  const [confirmingOrderId, setConfirmingOrderId] = useState(null);
+  const [copiedCredentials, setCopiedCredentials] = useState(false);
 
   // Review modal
   const [reviewModal, setReviewModal] = useState(null);
@@ -72,6 +81,7 @@ export default function Orders() {
       setDisputeOrder(null);
       setDisputeReason("");
       setDisputeDescription("");
+      fetchOrders();
     } catch (error) {
       toast.error("Failed to file dispute: " + error.message);
     } finally {
@@ -112,6 +122,40 @@ export default function Orders() {
     }
   };
 
+  const handleConfirmReceipt = async (order) => {
+    if (!confirm("Confirm that you've received the account credentials? This will release payment to the seller.")) {
+      return;
+    }
+
+    setConfirmingOrderId(order.id);
+    const result = await confirmReceipt(order.id);
+    setConfirmingOrderId(null);
+
+    if (result.success) {
+      fetchOrders();
+    }
+  };
+
+  const handleCopyCredentials = (credentials) => {
+    navigator.clipboard.writeText(credentials).then(() => {
+      setCopiedCredentials(true);
+      toast.success("Credentials copied to clipboard!");
+      setTimeout(() => setCopiedCredentials(false), 2000);
+    });
+  };
+
+  const handleMessageSeller = (order) => {
+    navigate("/dashboard/messages", {
+      state: {
+        contactUser: {
+          userId: order.seller_id,
+          username: order.seller?.username || "Seller",
+          avatar_url: order.seller?.avatar_url,
+        },
+      },
+    });
+  };
+
   const fetchOrders = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -120,7 +164,10 @@ export default function Orders() {
     try {
       const { data: ordersData, error: ordersError } = await supabase
         .from("orders")
-        .select("*")
+        .select(`
+          *,
+          seller:profiles!orders_seller_id_fkey(id, username, avatar_url, verified_seller)
+        `)
         .eq("buyer_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -137,7 +184,7 @@ export default function Orders() {
           try {
             const { data: accountData } = await supabase
               .from("accounts")
-              .select("id, title, price, rank, status")
+              .select("id, title, price, rank, server, status")
               .eq("id", order.account_id)
               .single();
 
@@ -187,19 +234,76 @@ export default function Orders() {
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
-  // Filter & Sort
-  const filteredOrders = orders.filter((o) => {
-    if (statusFilter === "all") return true;
-    return o.status === statusFilter;
-  }).sort((a, b) => {
-    if (sortOrder === "recent") return new Date(b.created_at) - new Date(a.created_at);
-    if (sortOrder === "oldest") return new Date(a.created_at) - new Date(b.created_at);
-    if (sortOrder === "price_high") return (b.amount || 0) - (a.amount || 0);
-    if (sortOrder === "price_low") return (a.amount || 0) - (b.amount || 0);
-    return 0;
-  });
+  // Real-time subscription for order updates
+  useEffect(() => {
+    if (!user) return;
 
-  if (loading) {
+    const subscription = supabase
+      .channel("orders-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `buyer_id=eq.${user.id}`,
+        },
+        () => {
+          fetchOrders();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [user, fetchOrders]);
+
+  // Filter & Sort
+  const filteredOrders = orders
+    .filter((o) => {
+      if (statusFilter === "all") return true;
+      if (statusFilter === "paid") return o.payment_status === "paid";
+      if (statusFilter === "completed") return o.status === "completed";
+      return o.status === statusFilter;
+    })
+    .sort((a, b) => {
+      if (sortOrder === "recent") return new Date(b.created_at) - new Date(a.created_at);
+      if (sortOrder === "oldest") return new Date(a.created_at) - new Date(b.created_at);
+      if (sortOrder === "price_high") return (b.amount || 0) - (a.amount || 0);
+      if (sortOrder === "price_low") return (a.amount || 0) - (b.amount || 0);
+      return 0;
+    });
+
+  const getOrderStatusBadge = (order) => {
+    if (order.status === "completed") {
+      return "bg-green-500/20 text-green-400 border-green-500/30";
+    }
+    if (order.status === "cancelled") {
+      return "bg-red-500/20 text-red-400 border-red-500/30";
+    }
+    if (order.payment_status === "paid" && order.credentials_delivered) {
+      return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+    }
+    if (order.payment_status === "paid") {
+      return "bg-green-500/20 text-green-400 border-green-500/30";
+    }
+    if (order.payment_status === "pending") {
+      return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+    }
+    return "bg-white/10 text-white/40 border-white/20";
+  };
+
+  const getOrderStatusText = (order) => {
+    if (order.status === "completed") return "Completed";
+    if (order.status === "cancelled") return "Cancelled";
+    if (order.payment_status === "paid" && order.credentials_delivered) return "Credentials Ready";
+    if (order.payment_status === "paid") return "Paid - Awaiting Delivery";
+    if (order.payment_status === "pending") return "Pending";
+    return order.payment_status || order.status;
+  };
+
+  if (loading && !orders.length) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
@@ -242,7 +346,7 @@ export default function Orders() {
         </h1>
       </div>
 
-      {/* Filter Toolbar (Eldorado style pills) */}
+      {/* Filter Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative">
           <select
@@ -252,7 +356,7 @@ export default function Orders() {
           >
             <option value="all">All statuses</option>
             <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
+            <option value="paid">Paid</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
@@ -318,6 +422,7 @@ export default function Orders() {
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.style.display = "none";
+                          e.target.parentElement.innerHTML = '<span className="text-2xl">🎮</span>';
                         }}
                       />
                     ) : (
@@ -326,6 +431,17 @@ export default function Orders() {
                   </div>
 
                   <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span
+                        className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border ${getOrderStatusBadge(order)}`}
+                      >
+                        {getOrderStatusText(order)}
+                      </span>
+                      <span className="text-xs text-white/40">
+                        Order #{order.id?.slice(0, 8)}
+                      </span>
+                    </div>
+
                     <Link
                       to={`/account/${order.account?.id}`}
                       className="font-bold text-base text-white hover:text-[#f5a623] transition-colors line-clamp-1"
@@ -339,192 +455,266 @@ export default function Orders() {
                       <span className="text-[#f5a623] font-black text-sm">
                         ${order.amount?.toLocaleString()}
                       </span>
-                      <span className="text-white/40">
-                        Order #{order.id?.slice(0, 8)}
-                      </span>
                     </div>
 
-                    {/* Escrow Status Box */}
+                    {/* Status Box */}
                     <div className="mt-3 p-3 rounded-xl bg-[#16161e] border border-[#2e2e3e]">
-                      {order.status === "pending" && (
+                      {order.payment_status === "pending" && (
                         <p className="text-xs font-bold text-yellow-400 flex items-center gap-1.5">
-                          <HiOutlineClock className="w-4 h-4" /> Waiting for seller to accept
+                          <HiOutlineClock className="w-4 h-4" /> Awaiting payment
                         </p>
                       )}
 
+                      {order.payment_status === "paid" && !order.credentials_delivered && (
+                        <p className="text-xs font-bold text-green-400 flex items-center gap-1.5">
+                          <HiOutlineClock className="w-4 h-4" /> Payment confirmed! Seller is preparing your credentials...
+                        </p>
+                      )}
+
+                      {order.payment_status === "paid" && order.credentials_delivered && !order.buyer_confirmed_at && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                            <HiOutlineKey className="w-4 h-4" /> Credentials delivered! Verify and confirm receipt.
+                          </p>
+                          <button
+                            onClick={() => setShowCredentialsModal(order)}
+                            className="w-full px-3 py-2 bg-blue-500/20 text-blue-400 font-bold text-xs rounded-lg hover:bg-blue-500/30 transition-colors flex items-center justify-center gap-1.5"
+                          >
+                            <HiOutlineEye className="w-4 h-4" /> View Account Credentials
+                          </button>
+                        </div>
+                      )}
+
                       {order.status === "completed" && (
-                        <>
-                          {order.escrow_status === "awaiting_payment" && (
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <p className="text-xs font-bold text-yellow-400 flex items-center gap-1">
-                                <HiOutlineCheckCircle className="w-4 h-4" /> Order accepted! Submit payment.
-                              </p>
-                              <button
-                                onClick={() => openPaymentModal(order)}
-                                className="px-3 py-1.5 bg-[#f5a623] text-[#121217] font-bold text-xs rounded-lg hover:bg-[#e0961f]"
-                              >
-                                💳 Pay Now (Escrow)
-                              </button>
-                            </div>
-                          )}
-
-                          {order.escrow_status === "payment_submitted" && (
-                            <p className="text-xs font-bold text-blue-400 flex items-center gap-1">
-                              <HiOutlineCheckCircle className="w-4 h-4" /> Payment submitted. Awaiting seller confirmation.
-                            </p>
-                          )}
-
-                          {order.escrow_status === "payment_verified" && (
-                            <p className="text-xs font-bold text-green-400 flex items-center gap-1">
-                              <HiOutlineCheckCircle className="w-4 h-4" /> Payment verified. Seller is dispatching credentials.
-                            </p>
-                          )}
-
-                          {order.escrow_status === "delivered" && (
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <p className="text-xs font-bold text-purple-400 flex items-center gap-1">
-                                <HiOutlineCheckCircle className="w-4 h-4" /> Account delivered! Verify within 48h.
-                              </p>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => confirmReceipt(order.id)}
-                                  className="px-3 py-1 bg-green-500 text-white font-bold text-xs rounded-lg hover:bg-green-600"
-                                >
-                                  Confirm & Release
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setDisputeOrder(order);
-                                    setShowDisputeModal(true);
-                                  }}
-                                  className="px-3 py-1 bg-red-500/20 text-red-400 font-bold text-xs rounded-lg hover:bg-red-500/30"
-                                >
-                                  Report Issue
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {order.escrow_status === "released" && (
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <p className="text-xs font-bold text-green-400 flex items-center gap-1">
-                                <HiOutlineCheckCircle className="w-4 h-4" /> Order complete & payment released!
-                              </p>
-                              <button
-                                onClick={() => setReviewModal(order)}
-                                className="px-3 py-1 bg-[#f5a623]/20 text-[#f5a623] border border-[#f5a623]/40 font-bold text-xs rounded-lg hover:bg-[#f5a623]/30 flex items-center gap-1"
-                              >
-                                <HiOutlineStar className="w-3.5 h-3.5" /> Write Review
-                              </button>
-                            </div>
-                          )}
-                        </>
+                        <p className="text-xs font-bold text-green-400 flex items-center gap-1.5">
+                          <HiOutlineCheckCircle className="w-4 h-4" /> Order completed! Payment released to seller.
+                        </p>
                       )}
 
                       {order.status === "cancelled" && (
-                        <p className="text-xs font-bold text-red-400 flex items-center gap-1">
+                        <p className="text-xs font-bold text-red-400 flex items-center gap-1.5">
                           <HiOutlineXCircle className="w-4 h-4" /> Order cancelled
                         </p>
                       )}
                     </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 mt-3 flex-wrap">
+                      {/* Confirm Receipt Button */}
+                      {order.payment_status === "paid" &&
+                        order.credentials_delivered &&
+                        !order.buyer_confirmed_at && (
+                          <button
+                            onClick={() => handleConfirmReceipt(order)}
+                            disabled={confirmingOrderId === order.id}
+                            className="px-3 py-2 bg-green-500 text-white font-bold text-xs rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                          >
+                            {confirmingOrderId === order.id ? (
+                              <>
+                                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Confirming...
+                              </>
+                            ) : (
+                              <>
+                                <HiOutlineCheckCircle className="w-4 h-4" /> Confirm Receipt & Release Payment
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                      {/* Message Seller */}
+                      <button
+                        onClick={() => handleMessageSeller(order)}
+                        className="px-3 py-2 bg-[#16161e] border border-[#2e2e3e] text-white/70 font-semibold text-xs rounded-lg hover:border-[#f5a623] hover:text-[#f5a623] transition-colors flex items-center gap-1.5"
+                      >
+                        <HiOutlineChat className="w-4 h-4" /> Message Seller
+                      </button>
+
+                      {/* Review Button */}
+                      {order.status === "completed" && (
+                        <button
+                          onClick={() => setReviewModal(order)}
+                          className="px-3 py-2 bg-[#16161e] border border-[#2e2e3e] text-white/70 font-semibold text-xs rounded-lg hover:border-[#f5a623] hover:text-[#f5a623] transition-colors flex items-center gap-1.5"
+                        >
+                          <HiOutlineStar className="w-4 h-4" /> Leave Review
+                        </button>
+                      )}
+
+                      {/* Dispute Button */}
+                      {order.payment_status === "paid" && order.status !== "completed" && (
+                        <button
+                          onClick={() => {
+                            setDisputeOrder(order);
+                            setShowDisputeModal(true);
+                          }}
+                          className="px-3 py-2 bg-red-500/10 border border-red-500/20 text-red-400 font-semibold text-xs rounded-lg hover:bg-red-500/20 transition-colors"
+                        >
+                          Report Issue
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                <span className="text-[10px] uppercase font-black px-3 py-1 rounded-full bg-[#16161e] border border-[#2e2e3e] text-white">
-                  {order.status}
-                </span>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Review Modal */}
-      {reviewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#1f1f29] border border-[#2e2e3e] w-full max-w-md p-6 rounded-2xl">
-            <h3 className="text-lg font-black text-white mb-4">Write a Review</h3>
-            <div className="flex items-center gap-1 mb-4">
-              {[1, 2, 3, 4, 5].map((star) => (
+      {/* Credentials Modal */}
+      <AnimatePresence>
+        {showCredentialsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#1f1f29] border border-[#2e2e3e] w-full max-w-lg p-6 rounded-2xl max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <HiOutlineKey className="w-5 h-5 text-blue-400" />
+                  <h3 className="text-lg font-black text-white">Account Credentials</h3>
+                </div>
                 <button
-                  key={star}
-                  onClick={() => setReviewRating(star)}
-                  className={`text-2xl ${star <= reviewRating ? "text-[#f5a623]" : "text-white/20"}`}
+                  onClick={() => setShowCredentialsModal(null)}
+                  className="p-2 text-white/40 hover:text-white rounded-lg hover:bg-white/5"
                 >
-                  ★
+                  <HiOutlineX className="w-5 h-5" />
                 </button>
-              ))}
-            </div>
-            <textarea
-              value={reviewComment}
-              onChange={(e) => setReviewComment(e.target.value)}
-              placeholder="Share your buying experience..."
-              rows={4}
-              className="w-full bg-[#16161e] border border-[#2e2e3e] text-white text-xs p-3 rounded-xl mb-4 focus:outline-none focus:border-[#f5a623]"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={submitReview}
-                className="flex-1 px-4 py-2.5 bg-[#f5a623] text-[#121217] font-bold text-xs rounded-xl hover:bg-[#e0961f]"
-              >
-                Submit Review
-              </button>
-              <button
-                onClick={() => setReviewModal(null)}
-                className="flex-1 px-4 py-2.5 bg-[#16161e] text-white font-semibold text-xs rounded-xl border border-[#2e2e3e]"
-              >
-                Cancel
-              </button>
-            </div>
+              </div>
+
+              <div className="p-4 bg-black/50 rounded-xl border border-white/10">
+                <pre className="whitespace-pre-wrap text-sm text-white/80 font-mono leading-relaxed">
+                  {showCredentialsModal.credentials_delivered}
+                </pre>
+              </div>
+
+              <div className="flex items-center gap-2 mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                <span className="text-yellow-400 text-xs">
+                  ⚠️ Change your password and secure your account immediately after accessing it.
+                </span>
+              </div>
+
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => handleCopyCredentials(showCredentialsModal.credentials_delivered)}
+                  className="flex-1 px-4 py-2.5 bg-[#f5a623] text-[#121217] font-bold text-xs rounded-xl hover:bg-[#e0961f] transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <HiOutlineClipboardCopy className="w-4 h-4" />
+                  {copiedCredentials ? "Copied!" : "Copy Credentials"}
+                </button>
+                <button
+                  onClick={() => setShowCredentialsModal(null)}
+                  className="flex-1 px-4 py-2.5 bg-[#16161e] text-white font-semibold text-xs rounded-xl border border-[#2e2e3e] hover:border-white/20"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
+
+      {/* Review Modal */}
+      <AnimatePresence>
+        {reviewModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#1f1f29] border border-[#2e2e3e] w-full max-w-md p-6 rounded-2xl"
+            >
+              <h3 className="text-lg font-black text-white mb-4">Write a Review</h3>
+              <div className="flex items-center gap-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setReviewRating(star)}
+                    className={`text-2xl ${star <= reviewRating ? "text-[#f5a623]" : "text-white/20"}`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Share your buying experience..."
+                rows={4}
+                className="w-full bg-[#16161e] border border-[#2e2e3e] text-white text-xs p-3 rounded-xl mb-4 focus:outline-none focus:border-[#f5a623]"
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={submitReview}
+                  className="flex-1 px-4 py-2.5 bg-[#f5a623] text-[#121217] font-bold text-xs rounded-xl hover:bg-[#e0961f]"
+                >
+                  Submit Review
+                </button>
+                <button
+                  onClick={() => setReviewModal(null)}
+                  className="flex-1 px-4 py-2.5 bg-[#16161e] text-white font-semibold text-xs rounded-xl border border-[#2e2e3e]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Dispute Modal */}
-      {showDisputeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#1f1f29] border border-[#2e2e3e] w-full max-w-md p-6 rounded-2xl">
-            <h3 className="text-lg font-black text-white mb-4">Report Issue with Order</h3>
-            <div className="space-y-2 mb-4">
-              {disputeReasons.map((reason) => (
+      <AnimatePresence>
+        {showDisputeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#1f1f29] border border-[#2e2e3e] w-full max-w-md p-6 rounded-2xl"
+            >
+              <h3 className="text-lg font-black text-white mb-4">Report Issue with Order</h3>
+              <div className="space-y-2 mb-4">
+                {disputeReasons.map((reason) => (
+                  <button
+                    key={reason}
+                    onClick={() => setDisputeReason(reason)}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${disputeReason === reason
+                        ? "bg-red-500/20 text-red-400 border border-red-500/40 font-bold"
+                        : "bg-[#16161e] text-white/80 border border-[#2e2e3e] hover:border-white/20"
+                      }`}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={disputeDescription}
+                onChange={(e) => setDisputeDescription(e.target.value)}
+                placeholder="Provide specific details about the issue..."
+                rows={3}
+                className="w-full bg-[#16161e] border border-[#2e2e3e] text-white text-xs p-3 rounded-xl mb-4 focus:outline-none focus:border-red-500"
+              />
+              <div className="flex gap-3">
                 <button
-                  key={reason}
-                  onClick={() => setDisputeReason(reason)}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    disputeReason === reason
-                      ? "bg-red-500/20 text-red-400 border border-red-500/40 font-bold"
-                      : "bg-[#16161e] text-white/80 border border-[#2e2e3e] hover:border-white/20"
-                  }`}
+                  onClick={submitDispute}
+                  disabled={disputeSubmitting || !disputeReason}
+                  className="flex-1 px-4 py-2.5 bg-red-500 text-white font-bold text-xs rounded-xl hover:bg-red-600 disabled:opacity-50"
                 >
-                  {reason}
+                  {disputeSubmitting ? "Filing..." : "File Dispute"}
                 </button>
-              ))}
-            </div>
-            <textarea
-              value={disputeDescription}
-              onChange={(e) => setDisputeDescription(e.target.value)}
-              placeholder="Provide specific details about the issue..."
-              rows={3}
-              className="w-full bg-[#16161e] border border-[#2e2e3e] text-white text-xs p-3 rounded-xl mb-4 focus:outline-none focus:border-red-500"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={submitDispute}
-                disabled={disputeSubmitting || !disputeReason}
-                className="flex-1 px-4 py-2.5 bg-red-500 text-white font-bold text-xs rounded-xl hover:bg-red-600 disabled:opacity-50"
-              >
-                {disputeSubmitting ? "Filing..." : "File Dispute"}
-              </button>
-              <button
-                onClick={() => setShowDisputeModal(false)}
-                className="flex-1 px-4 py-2.5 bg-[#16161e] text-white font-semibold text-xs rounded-xl border border-[#2e2e3e]"
-              >
-                Cancel
-              </button>
-            </div>
+                <button
+                  onClick={() => setShowDisputeModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-[#16161e] text-white font-semibold text-xs rounded-xl border border-[#2e2e3e]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

@@ -182,6 +182,30 @@ serve(async (req) => {
             console.error("Error creating transaction:", txError);
           }
         }
+        // Update seller wallet with pending balance
+        const { data: walletData } = await supabaseAdmin
+          .from("seller_wallets")
+          .select("*")
+          .eq("seller_id", sellerId)
+          .single();
+
+        if (walletData) {
+          await supabaseAdmin
+            .from("seller_wallets")
+            .update({
+              pending_balance: walletData.pending_balance + sellerEarnings,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("seller_id", sellerId);
+        } else {
+          await supabaseAdmin
+            .from("seller_wallets")
+            .insert({
+              seller_id: sellerId,
+              pending_balance: sellerEarnings,
+              updated_at: new Date().toISOString(),
+            });
+        }
 
         // Notify seller
         const notifySellerId = order.seller_id || sellerId;

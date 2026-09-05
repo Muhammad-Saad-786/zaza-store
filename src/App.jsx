@@ -51,7 +51,6 @@ import Refund from "./pages/Refund";
 import Cookies from "./pages/Cookies";
 import useCookieConsent from "./stores/useCookieConsent";
 import CookieBanner from "./components/ui/CookieBanner";
-import PaymentModal from "./components/payment/PaymentModal";
 import PaymentSettings from "./pages/seller/PaymentSettings";
 import Notifications from "./pages/dashboard/Notifications";
 import HeroesList from "./components/mlbb/HeroesList";
@@ -141,7 +140,7 @@ function App() {
         }}
       />
       <CookieBanner />
-      <PaymentModal />
+
 
       <Routes>
         <Route element={<Layout />}>

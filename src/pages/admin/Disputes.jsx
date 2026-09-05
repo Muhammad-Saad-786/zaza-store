@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "../../lib/supabase";
-import useEscrowStore from "../../stores/useEscrowStore";
 import GlassCard from "../../components/ui/GlassCard";
 import Spinner from "../../components/ui/Spinner";
 import toast from "react-hot-toast";
@@ -20,29 +19,9 @@ export default function Disputes() {
   const [showNotes, setShowNotes] = useState(null);
   const [adminNotes, setAdminNotes] = useState("");
 
-  const { resolveDispute: resolveEscrowDispute } = useEscrowStore();
-
   useEffect(() => {
     fetchDisputes();
   }, []);
-
-  const fetchDisputes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("disputes")
-        .select(
-          `*, buyer:profiles!disputes_buyer_id_fkey(username, email), seller:profiles!disputes_seller_id_fkey(username, email), order:orders(id, amount, escrow_status, account:accounts(title))`,
-        )
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setDisputes(data || []);
-    } catch (error) {
-      console.error("Failed to fetch disputes:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleResolve = async (dispute, resolution) => {
     setResolvingId(dispute.id);
@@ -64,19 +43,14 @@ export default function Disputes() {
         })
         .eq("id", dispute.id);
 
-      // Handle escrow resolution
-      if (resolution === "refund") {
-        await resolveEscrowDispute(
-          dispute.order?.id,
-          "refund",
-          adminNotes || "Admin decision: Refund to buyer",
-        );
-      } else if (resolution === "release") {
-        await resolveEscrowDispute(
-          dispute.order?.id,
-          "release",
-          adminNotes || "Admin decision: Release to seller",
-        );
+      // Handle order payment status update (replace escrow_status with payment_status)
+      const orderId = dispute.order?.id;
+      if (orderId) {
+        const paymentUpdate = resolution === "refund"
+          ? { payment_status: "failed" }
+          : { payment_status: "paid" };
+
+        await supabase.from("orders").update(paymentUpdate).eq("id", orderId);
       }
 
       // Notify both parties
@@ -200,13 +174,12 @@ export default function Disputes() {
                 <div className="flex-1 min-w-0">
                   {/* Status Badge */}
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                      d.status === "open"
+                    className={`px-3 py-1 rounded-full text-xs font-medium border ${d.status === "open"
                         ? "text-red-400 bg-red-400/10 border-red-400/30"
                         : d.status === "under_review"
                           ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/30"
                           : "text-green-400 bg-green-400/10 border-green-400/30"
-                    }`}
+                      }`}
                   >
                     {d.status?.replace(/_/g, " ")}
                   </span>
@@ -311,13 +284,12 @@ export default function Disputes() {
                 {d.status !== "open" && d.status !== "under_review" && (
                   <div className="flex-shrink-0 text-right">
                     <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        d.status === "resolved_buyer"
+                      className={`text-xs px-2 py-1 rounded-full ${d.status === "resolved_buyer"
                           ? "bg-green-500/20 text-green-400"
                           : d.status === "resolved_seller"
                             ? "bg-amber-500/20 text-amber-400"
                             : "bg-white/5 text-white/40"
-                      }`}
+                        }`}
                     >
                       {d.status === "resolved_buyer"
                         ? "Refunded"

@@ -122,11 +122,11 @@ const useSellerDashboardStore = create((set, get) => ({
         .eq("seller_id", user.id);
 
       const allOrders = orders || [];
-      const completedOrders = allOrders.filter((o) => o.status === "completed" || o.escrow_status === "released").length;
+      const completedOrders = allOrders.filter((o) => o.payment_status === "paid").length;
       const pendingOrders = allOrders.filter((o) => o.status === "pending").length;
-      const inProgressOrders = allOrders.filter((o) => o.status === "in_progress" || (o.status === "completed" && o.escrow_status !== "released")).length;
+      const inProgressOrders = allOrders.filter((o) => o.payment_status === "paid").length;
       const cancelledOrders = allOrders.filter((o) => o.status === "cancelled").length;
-      const disputedOrders = allOrders.filter((o) => o.status === "disputed" || o.escrow_status === "disputed").length;
+      const disputedOrders = allOrders.filter((o) => o.payment_status !== "paid" && o.status !== "disputed").length;
 
       // 3. Fetch Transactions
       const { data: txs } = await supabase
@@ -164,9 +164,11 @@ const useSellerDashboardStore = create((set, get) => ({
         // Table might be newly created
       }
 
-      // Pending Payouts from Escrow
+      // Pending Payouts from Stripe payments
+      // Orders where payment is completed but buyer hasn't confirmed receipt yet
+      // (automatically handled by Stripe webhook - payment releases after buyer confirmation)
       const pendingPayouts = allOrders
-        .filter((o) => o.status === "completed" && o.escrow_status !== "released" && o.escrow_status !== "disputed" && o.escrow_status !== "refunded")
+        .filter((o) => o.payment_status === "paid")
         .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
 
       const availableBalance = Math.max(0, totalRevenue - totalWithdrawn - pendingPayouts);

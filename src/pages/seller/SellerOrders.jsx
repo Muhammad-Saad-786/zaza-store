@@ -27,7 +27,6 @@ export default function SellerOrders() {
     updateOrderStatus,
     deliverCredentials,
   } = useSellerDashboardStore();
-  const { verifyPayment } = useEscrowStore();
 
   const [activeTab, setActiveTab] = useState("all");
   const [sortOrder, setSortOrder] = useState("recent");
@@ -45,7 +44,7 @@ export default function SellerOrders() {
   };
 
   const handleAccept = async (order) => {
-    await updateOrderStatus(order.id, "completed", { escrow_status: "awaiting_payment" });
+    await updateOrderStatus(order.id, "completed");
     setIsDetailModalOpen(false);
   };
 
@@ -56,7 +55,8 @@ export default function SellerOrders() {
   };
 
   const handleVerifyPayment = async (orderId) => {
-    await verifyPayment(orderId);
+    // Payment verification is now handled automatically by Stripe webhook
+    // No manual action needed - order status updated by webhook
     fetchSellerOrders();
     setIsDetailModalOpen(false);
   };
@@ -64,10 +64,10 @@ export default function SellerOrders() {
   const filteredOrders = sellerOrders
     .filter((order) => {
       if (activeTab === "pending" && order.status !== "pending") return false;
-      if (activeTab === "in_progress" && (order.status !== "in_progress" && order.escrow_status !== "payment_submitted" && order.escrow_status !== "payment_verified")) return false;
-      if (activeTab === "completed" && (order.status !== "completed" || (order.escrow_status && order.escrow_status !== "released"))) return false;
+      if (activeTab === "in_progress" && order.payment_status !== "paid") return false;
+      if (activeTab === "completed" && order.payment_status !== "paid") return false;
       if (activeTab === "cancelled" && order.status !== "cancelled") return false;
-      if (activeTab === "disputed" && order.escrow_status !== "disputed" && order.status !== "disputed") return false;
+      if (activeTab === "disputed" && order.payment_status !== "paid" && order.status !== "disputed") return false;
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -204,11 +204,6 @@ export default function SellerOrders() {
                       >
                         {order.status}
                       </span>
-                      {order.escrow_status && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#16161e] text-[#f5a623] border border-[#f5a623]/30 font-bold capitalize">
-                          Escrow: {order.escrow_status.replace(/_/g, " ")}
-                        </span>
-                      )}
                       <span className="text-xs text-white/40">
                         Order #{order.id?.slice(0, 8)}
                       </span>

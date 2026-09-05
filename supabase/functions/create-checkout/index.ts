@@ -103,13 +103,13 @@ serve(async (req) => {
           order = bySession;
         }
 
-        // If order doesn't exist yet, create it now that payment is confirmed!
+        // In the verify action section, update the insert to use correct columns
         if (!order) {
           const { data: newOrder, error: createError } = await supabaseAdmin
             .from("orders")
             .insert({
-              buyer_id: session.metadata?.buyer_id || (user?.id || "guest"),
-              seller_id: session.metadata?.seller_id || (user?.id || "guest"),
+              buyer_id: session.metadata?.buyer_id,
+              seller_id: session.metadata?.seller_id,
               account_id: targetAccountId,
               amount: paidAmount,
               payment_status: "paid",
@@ -120,11 +120,11 @@ serve(async (req) => {
               stripe_payment_intent_id: session.payment_intent,
               amount_paid: paidAmount,
               paid_at: new Date().toISOString(),
+              release_status: "pending",
               updated_at: new Date().toISOString(),
             })
             .select()
             .single();
-
           if (createError) {
             console.error("Error creating order upon verification:", createError);
             throw new Error("Failed to create verified order: " + createError.message);

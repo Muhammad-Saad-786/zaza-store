@@ -273,6 +273,23 @@ const useOrderStore = create((set, get) => ({
       return { success: false, error: error.message };
     }
   },
+  confirmReceipt: async (orderId) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("release-payment", {
+        body: { order_id: orderId },
+      });
+
+      if (error) throw error;
+
+      toast.success("Payment released! Order completed.");
+      await get().fetchOrder(orderId);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to confirm receipt:", error);
+      toast.error(error.message || "Failed to confirm receipt");
+      return { success: false, error: error.message };
+    }
+  },
 
   cancelOrder: async (orderId) => {
     try {

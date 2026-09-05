@@ -39,18 +39,19 @@ export default function OrderDetailModal({
   ];
 
   const currentStepIdx = timelineSteps.findIndex(
-    (s) => s.key === order.escrow_status
+    (s) => s.key === order.payment_status
   );
   const activeIdx = currentStepIdx !== -1 ? currentStepIdx : order.status === "completed" ? 4 : 0;
 
   const handleDeliver = async () => {
     if (!credentials.trim()) {
-      toast.error("Please enter account credentials (login ID & password)");
+      toast.error("Please enter account credentials");
       return;
     }
     setIsDelivering(true);
     await onDeliverCredentials(order.id, credentials);
     setIsDelivering(false);
+    onClose();
   };
 
   const openProof = async () => {
@@ -109,26 +110,23 @@ export default function OrderDetailModal({
                   {/* Connecting Line */}
                   {i < timelineSteps.length - 1 && (
                     <div
-                      className={`absolute top-4 left-1/2 w-full h-0.5 -translate-y-1/2 z-0 ${
-                        i < activeIdx ? "bg-green-400" : "bg-white/10"
-                      }`}
+                      className={`absolute top-4 left-1/2 w-full h-0.5 -translate-y-1/2 z-0 ${i < activeIdx ? "bg-green-400" : "bg-white/10"
+                        }`}
                     />
                   )}
                   <div
-                    className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                      isCurrent
+                    className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${isCurrent
                         ? "bg-brand-gold text-brand-darker ring-4 ring-brand-gold/20 font-black"
                         : isPastOrCurrent
-                        ? "bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.4)]"
-                        : "bg-white/10 text-white/40"
-                    }`}
+                          ? "bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.4)]"
+                          : "bg-white/10 text-white/40"
+                      }`}
                   >
                     {isPastOrCurrent && !isCurrent ? "✓" : i + 1}
                   </div>
                   <span
-                    className={`text-[10px] mt-2 font-medium max-w-[70px] leading-tight ${
-                      isCurrent ? "text-brand-gold font-bold" : isPastOrCurrent ? "text-white/80" : "text-white/30"
-                    }`}
+                    className={`text-[10px] mt-2 font-medium max-w-[70px] leading-tight ${isCurrent ? "text-brand-gold font-bold" : isPastOrCurrent ? "text-white/80" : "text-white/30"
+                      }`}
                   >
                     {st.label}
                   </span>
@@ -203,15 +201,15 @@ export default function OrderDetailModal({
           </div>
         )}
 
-        {/* Credentials Delivery Form (When payment verified) */}
-        {order.escrow_status === "payment_verified" && (
+        {/* Credentials Delivery Form (When payment paid) */}
+        {order.payment_status === "paid" && (
           <div className="p-4 bg-brand-purple/10 border border-brand-purple/30 rounded-2xl space-y-3">
             <div className="flex items-center gap-2 text-brand-purple font-semibold text-sm">
               <HiOutlineKey className="w-5 h-5" />
               Deliver Account Credentials
             </div>
             <p className="text-xs text-white/60">
-              Payment is secured in escrow. Provide login email, password, and bind details for the buyer.
+              Payment confirmed. Provide login email, password, and bind details for the buyer.
             </p>
             <textarea
               rows={3}
@@ -243,12 +241,6 @@ export default function OrderDetailModal({
                 <HiOutlineCheckCircle className="w-4 h-4 mr-1" /> Accept Order
               </Button>
             </>
-          )}
-
-          {order.escrow_status === "payment_submitted" && (
-            <Button variant="gold" size="sm" onClick={() => onVerifyPayment(order.id)}>
-              <HiOutlineCheckCircle className="w-4 h-4 mr-1" /> Verify Payment Received
-            </Button>
           )}
 
           <Button variant="ghost" size="sm" onClick={onClose}>
